@@ -1,0 +1,33 @@
+-- Insert default admin user
+INSERT INTO users (username, password, created_at)
+VALUES ('admin', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW', CURRENT_TIMESTAMP)
+ON CONFLICT (username) DO NOTHING;
+
+-- Insert roles for admin user
+INSERT INTO roles (name, user_id)
+SELECT 'ROLE_USER', id FROM users WHERE username = 'admin'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO roles (name, user_id)
+SELECT 'ROLE_ADMIN', id FROM users WHERE username = 'admin'
+ON CONFLICT DO NOTHING;
+
+-- Insert default currencies
+INSERT INTO currencies (country_code, symbol, conversion_rate) 
+VALUES 
+    ('USD', '$', 1.0),
+    ('EUR', '€', 0.92),
+    ('GBP', '£', 0.79),
+    ('JPY', '¥', 151.62),
+    ('AUD', 'A$', 1.52)
+ON CONFLICT (country_code) DO NOTHING;
+
+-- Insert default membership tiers
+INSERT INTO memberships (name, member_limit, discount_amount)
+VALUES 
+    ('BRONZE', 1000, 0.0),
+    ('SILVER', 5000, 0.05),
+    ('GOLD', 10000, 0.10),
+    ('PLATINUM', 50000, 0.15),
+    ('DIAMOND', 100000, 0.20)
+ON CONFLICT (name) DO NOTHING; 
