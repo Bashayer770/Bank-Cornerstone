@@ -1,0 +1,46 @@
+package com.bank.account
+
+import com.bank.currency.CurrencyEntity
+import com.bank.user.UserEntity
+import com.bank.usermembership.UserMembershipEntity
+import jakarta.persistence.*
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
+import java.math.BigDecimal
+import java.time.LocalDateTime
+
+@Repository
+interface AccountRepository : JpaRepository<AccountEntity, Long> {
+//    fun findByUserId(userId: Long): List<AccountEntity>
+//    fun findByCurrencyId(currencyId: Long): List<AccountEntity>
+}
+
+@Entity
+@Table(name = "accounts")
+data class AccountEntity(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    val user: UserEntity,
+
+    @Column(precision = 9, scale = 3)
+    val balance: BigDecimal,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "currency_id", referencedColumnName = "id")
+    val currency: CurrencyEntity,
+
+    @Column(name = "createdat")
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "is_active")
+    val isActive: Boolean,
+
+    @Column(name = "account_number")
+    val accountNumber: String
+) {
+    constructor() : this(null, UserEntity(), BigDecimal.ZERO, CurrencyEntity(), LocalDateTime.now(), true, "")
+}
