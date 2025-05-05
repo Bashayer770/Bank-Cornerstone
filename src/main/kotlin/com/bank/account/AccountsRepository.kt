@@ -33,7 +33,7 @@ data class AccountEntity(
     @JoinColumn(name = "currency_id", referencedColumnName = "id")
     val currency: CurrencyEntity,
 
-    @Column(name = "createdat")
+    @Column(name = "created_at")
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
     @Column(name = "is_active")

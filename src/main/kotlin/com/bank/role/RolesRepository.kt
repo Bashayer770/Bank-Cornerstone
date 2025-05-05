@@ -17,7 +17,7 @@ data class RoleEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
-
+    @Enumerated(EnumType.STRING)
     @Column(name = "role_name")
     val roleName: RoleName,
 

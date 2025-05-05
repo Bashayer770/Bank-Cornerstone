@@ -1,5 +1,8 @@
 package com.bank.user
 
+import com.bank.role.RoleEntity
+import com.bank.role.RoleName
+import com.bank.role.RoleRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -9,7 +12,8 @@ import java.time.LocalDateTime
 @Service
 class UsersService(
     private val userRepository: UserRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val roleRepository: RoleRepository
 ) {
     fun registerUser(request: CreateUserDTO): ResponseEntity<Any> {
         if (userRepository.existsByUsername(request.username)) {
@@ -51,7 +55,8 @@ class UsersService(
         }
 
         val hashedPassword = passwordEncoder.encode(request.password)
-        userRepository.save(UserEntity(username = request.username, password = hashedPassword, createdAt = LocalDateTime.now()))
+        val user = userRepository.save(UserEntity(username = request.username, password = hashedPassword, createdAt = LocalDateTime.now()))
+        roleRepository.save(RoleEntity(user = user, roleName = RoleName.CUSTOMER))
         return ResponseEntity.ok().build()
     }
 }

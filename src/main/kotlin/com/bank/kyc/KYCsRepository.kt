@@ -31,7 +31,17 @@ data class KYCEntity(
     val country: String,
 
     @Column(name = "date_of_birth")
-    val dob: LocalDate
+    val dob: LocalDate,
+
+    @Column(name = "civil_id")
+    val civilId: String,
+
+    @Column(name = "phone_number")
+    val phoneNumber: String,
+
+    @Column(name = "home_address")
+    val homeAddress: String
+
 ) {
-    constructor() : this(null, UserEntity(), "", "", "", LocalDate.MIN)
+    constructor() : this(null, UserEntity(), "", "", "", LocalDate.MIN, "", "", "")
 }
