@@ -33,4 +33,25 @@ data class UserMembership(
 
     @Column(nullable = false)
     val tierPoints: Int = 0
-) 
+)
+
+data class UserMembershipRequest(
+    val userId: Long,
+    val accountId: Long,
+    val membershipTierId: Long,
+    val startedAt: LocalDateTime,
+    val endedAt: LocalDateTime?,
+    val tierPoints: Int
+)
+
+
+data class UserMembershipResponse(
+    val id: Long,
+    val userId: Long,
+    val username: String,
+    val accountId: Long,
+    val membershipTierName: String,
+    val startedAt: LocalDateTime,
+    val endedAt: LocalDateTime?,
+    val tierPoints: Int
+)

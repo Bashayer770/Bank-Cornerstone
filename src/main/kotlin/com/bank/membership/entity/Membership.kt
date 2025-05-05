@@ -9,12 +9,19 @@ data class Membership(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true)
-    val name: String,
+    val name: MembershipTier,
 
     @Column(nullable = false)
     val memberLimit: Int,
 
     @Column(nullable = false)
-    val discountAmount: Double
-) 
+    val discountAmount: Double //may change to bigdecimal according to schema
+)
+
+enum class MembershipTier {
+    BRONZE,
+    SILVER,
+    GOLD
+}
