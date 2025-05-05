@@ -7,8 +7,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface RoleRepository : JpaRepository<RoleEntity, Long> {
-//    fun findByUserId(userId: Long): List<RoleEntity>
-//    fun findByName(roleName: String): RoleEntity?
+   fun findByUserId(userId: Long): List<RoleEntity>
 }
 
 @Entity
@@ -16,12 +15,21 @@ interface RoleRepository : JpaRepository<RoleEntity, Long> {
 data class RoleEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
+    val id: Long? = null,
+
 
     @Column(name = "role_name")
-    val roleName: String,
+    val roleName: RoleName,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     val user: UserEntity
-)
+) {
+    constructor() : this(null, RoleName.CUSTOMER, UserEntity())
+}
+
+enum class RoleName {
+    ADMIN,
+    CUSTOMER
+}
+

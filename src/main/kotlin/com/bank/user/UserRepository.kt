@@ -24,6 +24,7 @@ data class UserEntity(
     val password: String,
 
     @CreationTimestamp
+    @Column(name = "created_at")
     val createdAt: LocalDateTime? = null,
 
     ) {
