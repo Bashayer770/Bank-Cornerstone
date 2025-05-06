@@ -23,7 +23,7 @@ class AccountsController(
     fun listUserAccounts(): ResponseEntity<Any> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            ?: throw IllegalArgumentException("user has no id...")
         return accountsService.listUserAccounts(user.id)
     }
 
@@ -31,7 +31,7 @@ class AccountsController(
     fun createAccount(@RequestBody request: CreateAccountDTO): ResponseEntity<Any> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            ?: throw IllegalArgumentException("user has no id...")
         return accountsService.createAccount(request, user.id)
     }
 
@@ -41,7 +41,7 @@ class AccountsController(
     ): ResponseEntity<Any> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            ?: throw IllegalArgumentException("user has no id...")
 
         return accountsService.closeAccount(accountNumber, user.id)
     }

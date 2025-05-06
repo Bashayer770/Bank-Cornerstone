@@ -13,7 +13,7 @@ class KYCsService(
     private val kycRepository: KYCRepository,
     private val userRepository: UserRepository
 ) {
-    fun listKYC(userId: Long): ResponseEntity<Any> {
+    fun getKYC(userId: Long): ResponseEntity<Any> {
         val kyc = kycRepository.findByUserId(userId)
             ?: return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
@@ -21,7 +21,6 @@ class KYCsService(
 
         return ResponseEntity.ok(
             KYCResponseDTO(
-                userId = userId,
                 firstName = kyc.firstName,
                 lastName = kyc.lastName,
                 dateOfBirth = kyc.dateOfBirth,
@@ -80,7 +79,6 @@ class KYCsService(
 
         return ResponseEntity.ok(user.id?.let {
             KYCResponseDTO( // returning the results of the operation to the client
-                userId = it,
                 firstName = kyc.firstName,
                 lastName = kyc.lastName,
                 dateOfBirth = kyc.dateOfBirth,

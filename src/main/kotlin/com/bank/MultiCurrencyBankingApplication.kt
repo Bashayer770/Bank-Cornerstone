@@ -13,12 +13,9 @@ class MultiCurrencyBankingApplication
 
 fun main(args: Array<String>) {
     runApplication<MultiCurrencyBankingApplication>(*args)
-    kycsConfig.getMapConfig("kycs").setTimeToLiveSeconds(60)
-    accountsConfig.getMapConfig("accounts").setTimeToLiveSeconds(60)
+    mcCacheConfig.getMapConfig("kycs").setTimeToLiveSeconds(60)
+    mcCacheConfig.getMapConfig("accounts").setTimeToLiveSeconds(60)
 }
 
-val kycsConfig = Config("kyc-cache")
-val serverKycsCache: HazelcastInstance = Hazelcast.newHazelcastInstance(kycsConfig)
-
-val accountsConfig = Config("accounts-cache")
-val serverAccountsCache: HazelcastInstance = Hazelcast.newHazelcastInstance(accountsConfig)
+val mcCacheConfig = Config("multi-currency-cache")
+val serverMcCache: HazelcastInstance = Hazelcast.newHazelcastInstance(mcCacheConfig)
