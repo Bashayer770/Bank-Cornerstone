@@ -2,6 +2,7 @@ package com.bank.usermembership.entity
 
 import com.bank.account.entity.Account
 import com.bank.membership.entity.Membership
+import com.bank.membership.entity.MembershipTier
 import com.bank.user.entity.User
 import jakarta.persistence.*
 import java.time.LocalDateTime
@@ -24,6 +25,9 @@ data class UserMembership(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "membership_tier_id", nullable = false)
     val membershipTier: Membership,
+
+    @JoinColumn(name = "membership_tier_name", nullable = false)
+    val membershipTierName: String,
 
     @Column(nullable = false)
     val startedAt: LocalDateTime,
@@ -51,6 +55,7 @@ data class UserMembershipResponse(
     val username: String,
     val accountId: Long,
     val membershipTierName: String,
+
     val startedAt: LocalDateTime,
     val endedAt: LocalDateTime?,
     val tierPoints: Int

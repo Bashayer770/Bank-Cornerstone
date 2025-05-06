@@ -27,6 +27,7 @@ class UserMembershipService(
             user = user,
             account = account,
             membershipTier = membership,
+            membershipTierName = membership.name.toString(),
             startedAt = request.startedAt,
             endedAt = request.endedAt,
             tierPoints = request.tierPoints
