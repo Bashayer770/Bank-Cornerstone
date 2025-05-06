@@ -61,4 +61,5 @@ data class AccountResponseDTO(
     val accountType: String,
     val createdAt: LocalDateTime,
     val currencyCode: String,
+    val symbol: String
 )

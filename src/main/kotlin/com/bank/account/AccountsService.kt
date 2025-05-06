@@ -30,7 +30,8 @@ class AccountsService(
                     accountNumber = it.accountNumber,
                     accountType = it.accountType,
                     createdAt = it.createdAt,
-                    currencyCode = it.currency.symbol
+                    currencyCode = it.currency.countryCode,
+                    symbol = it.currency.symbol
 
                 )
             }
@@ -51,7 +52,7 @@ class AccountsService(
         if (request.initialBalance < BigDecimal(0.000) || request.initialBalance > BigDecimal(1000000.000)) {
             return ResponseEntity
                 .badRequest()
-                .body(mapOf("error" to "Initial balance must be between 10 and 1,000,000 KD"))
+                .body(mapOf("error" to "Initial balance must be between 0 and 1,000,000 ${currency.countryCode}"))
         }
 
         val userAccounts = accountRepository.findAll().filter { it.user.id == user.id && it.isActive }
@@ -77,6 +78,7 @@ class AccountsService(
             accountType = account.accountType,
             createdAt = account.createdAt,
             currencyCode = account.currency.countryCode,
+            symbol = account.currency.symbol
         ))
     }
 
