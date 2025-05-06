@@ -19,7 +19,7 @@ class AccountsController(
     private val accountsService: AccountsService,
     private val userRepository: UserRepository
 ) {
-    @GetMapping("/accounts")
+    @GetMapping("/api/v1/users/accounts")
     fun listUserAccounts(): ResponseEntity<Any> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)
@@ -27,7 +27,7 @@ class AccountsController(
         return accountsService.listUserAccounts(user.id)
     }
 
-    @PostMapping("/accounts")
+    @PostMapping("/api/v1/users/accounts")
     fun createAccount(@RequestBody request: CreateAccountDTO): ResponseEntity<Any> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)
@@ -35,7 +35,7 @@ class AccountsController(
         return accountsService.createAccount(request, user.id)
     }
 
-    @PostMapping("/accounts/close/{accountNumber}")
+    @PostMapping("/api/v1/users/accounts/{accountNumber}")
     fun closeAccount(
         @PathVariable accountNumber: String
     ): ResponseEntity<Any> {

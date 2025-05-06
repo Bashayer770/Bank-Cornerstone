@@ -9,13 +9,12 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @RestController
-@RequestMapping("/users/kyc")
 class KYCsController(
     private val kycsService: KYCsService,
     private val userRepository: UserRepository
 ) {
 
-    @GetMapping
+    @GetMapping("/api/v1/users/kyc")
     fun getMyKYC(): ResponseEntity<Any> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)
@@ -24,7 +23,7 @@ class KYCsController(
         return kycsService.listKYC(user.id!!)
     }
 
-    @PostMapping
+    @PostMapping("/api/v1/users/kyc")
     fun addOrUpdateMyKYC(@RequestBody request: KYCRequestDTO): ResponseEntity<Any> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)

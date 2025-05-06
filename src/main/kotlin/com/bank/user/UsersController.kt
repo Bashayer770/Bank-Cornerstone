@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*
 class UsersController(
     private val usersService: UsersService
 ) {
-    @PostMapping("/users/register")
+    @PostMapping("/api/v1/authentication/register")
     fun registerUser(@Valid @RequestBody request: CreateUserDTO): ResponseEntity<Any>{
         return usersService.registerUser(request)
     }

@@ -30,12 +30,12 @@ class SecurityConfig(
         http.csrf { it.disable() }
             .authorizeHttpRequests {
                 it.requestMatchers(
-                    "/authentication/login",
-                    "/users/register").permitAll()
+                    "/authentication/api/v1/authentication/login",
+                    "/api/v1/authentication/register").permitAll()
                 it.requestMatchers(
-                    "/users/kyc",
-                    "/accounts",
-                    "/accounts/close/{accountNumber}").authenticated()
+                    "/api/v1/users/kyc",
+                    "/api/v1/users/accounts",
+                    "/api/v1/users/accounts/{accountNumber}").authenticated()
                     .anyRequest().authenticated()
             }
             .sessionManagement {

@@ -27,11 +27,11 @@ data class TransactionEntity(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_account")
-    val sourceAccount: AccountEntity,
+    val sourceAccount: AccountEntity? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "destination_account")
-    val destinationAccount: AccountEntity,
+    val destinationAccount: AccountEntity? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_id")
@@ -55,7 +55,7 @@ data class TransactionEntity(
     val transactionType: TransactionType? = null
 
 ) {
-    constructor() : this(null, AccountEntity(), AccountEntity(), CurrencyEntity(), BigDecimal("0.0"), null, LocalDateTime.now(), PromoCodeEntity(), null)
+    constructor() : this(null, null, null, CurrencyEntity(), BigDecimal("0.0"), null, LocalDateTime.now(), PromoCodeEntity(), null)
 }
 
 enum class TransactionStatus {

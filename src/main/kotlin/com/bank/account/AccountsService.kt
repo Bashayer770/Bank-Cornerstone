@@ -17,7 +17,7 @@ class AccountsService(
     private val currencyRepository: CurrencyRepository
 ) {
     fun listUserAccounts(userId: Long?): ResponseEntity<Any> {
-        val accounts = accountRepository.findByUserId(userId)
+        val accounts = accountRepository.findByUserId(userId).filter { it.isActive }
         if (accounts.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "no accounts found for user ID $userId"))
@@ -93,7 +93,7 @@ class AccountsService(
 
         if (account.balance > BigDecimal.ZERO) {
             return ResponseEntity.badRequest()
-                .body(mapOf("error" to "Cannot close account with non-zero balance"))
+                .body(mapOf("error" to "cannot close account with non-zero balance"))
         }
 
         val closedAccount = account.copy(isActive = false)
