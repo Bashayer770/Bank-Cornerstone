@@ -4,11 +4,12 @@ import com.bank.user.UserEntity
 import jakarta.persistence.*
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
 interface KYCRepository : JpaRepository<KYCEntity, Long> {
-    //fun findByUserId(userId: Long): KYCEntity?
+    fun findByUserId(userId: Long): KYCEntity?
 }
 
 @Entity
@@ -31,7 +32,7 @@ data class KYCEntity(
     val country: String,
 
     @Column(name = "date_of_birth")
-    val dob: LocalDate,
+    val dateOfBirth: LocalDate,
 
     @Column(name = "civil_id")
     val civilId: String,
@@ -40,8 +41,11 @@ data class KYCEntity(
     val phoneNumber: String,
 
     @Column(name = "home_address")
-    val homeAddress: String
+    val homeAddress: String,
+
+    @Column(precision = 9, scale = 3)
+    val salary: BigDecimal
 
 ) {
-    constructor() : this(null, UserEntity(), "", "", "", LocalDate.MIN, "", "", "")
+    constructor() : this(null, UserEntity(), "", "", "", LocalDate.MIN, "", "", "", BigDecimal.ZERO)
 }
