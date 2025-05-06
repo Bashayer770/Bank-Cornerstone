@@ -32,7 +32,11 @@ class SecurityConfig(
                 it.requestMatchers(
                     "/authentication/login",
                     "/users/register").permitAll()
-                    it.anyRequest().authenticated()
+                it.requestMatchers(
+                    "/users/kyc",
+                    "/accounts",
+                    "/accounts/close/{accountNumber}").authenticated()
+                    .anyRequest().authenticated()
             }
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

@@ -10,6 +10,7 @@ import java.time.LocalDateTime
 interface UserRepository : JpaRepository<UserEntity, Long> {
     fun findByUsername(username: String): UserEntity?
     fun existsByUsername(username: String): Boolean
+    fun findById(userId: Long?): UserEntity?
 }
 
 @Entity

@@ -11,8 +11,9 @@ import java.time.LocalDateTime
 
 @Repository
 interface AccountRepository : JpaRepository<AccountEntity, Long> {
-//    fun findByUserId(userId: Long): List<AccountEntity>
-//    fun findByCurrencyId(currencyId: Long): List<AccountEntity>
+    fun findByUserId(userId: Long?): List<AccountEntity>
+    fun findByCurrencyId(currencyId: Long): List<AccountEntity>
+    fun existsByAccountNumber(accountNumber: String): Boolean
 }
 
 @Entity
@@ -40,7 +41,10 @@ data class AccountEntity(
     val isActive: Boolean,
 
     @Column(name = "account_number")
-    val accountNumber: String
+    val accountNumber: String,
+
+    @Column(name = "account_type")
+    val accountType: String
 ) {
-    constructor() : this(null, UserEntity(), BigDecimal.ZERO, CurrencyEntity(), LocalDateTime.now(), true, "")
+    constructor() : this(null, UserEntity(), BigDecimal.ZERO, CurrencyEntity(), LocalDateTime.now(), true, "", "")
 }
