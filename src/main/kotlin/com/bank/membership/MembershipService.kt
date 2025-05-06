@@ -1,6 +1,7 @@
 package com.bank.membership
 
 import com.bank.membership.entity.Membership
+import com.bank.membership.entity.MembershipTier
 import com.bank.membership.repository.MembershipRepository
 import org.springframework.stereotype.Service
 
@@ -10,7 +11,15 @@ class MembershipService(
 ) {
     fun getAll(): List<Membership> = membershipRepository.findAll()
 
-    fun create(membership: Membership): Membership = membershipRepository.save(membership)
+    fun getById(id: Long): Membership = membershipRepository.findById(id)
+        .orElseThrow { NoSuchElementException("Membership with ID $id not found") }
 
-    fun getById(id: Long): Membership = membershipRepository.findById(id).orElseThrow()
+    fun getByTierName(name: String): Membership? {
+        return try {
+            val tier = MembershipTier.valueOf(name.uppercase())
+            membershipRepository.findByName(tier)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    }
 }

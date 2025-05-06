@@ -1,6 +1,7 @@
 package com.bank.usermembership
 
 import com.bank.account.repository.AccountRepository
+import com.bank.membership.entity.MembershipTier
 import com.bank.membership.repository.MembershipRepository
 import com.bank.user.repository.UserRepository
 import com.bank.usermembership.entity.*
@@ -19,9 +20,20 @@ class UserMembershipService(
 ) {
 
     fun create(request: UserMembershipRequest): UserMembership {
-        val user = userRepository.findById(request.userId).orElseThrow()
-        val account = accountRepository.findById(request.accountId).orElseThrow()
-        val membership = membershipRepository.findById(request.membershipTierId).orElseThrow()
+        val user = userRepository.findById(request.userId)
+            .orElseThrow { IllegalArgumentException("User with ID ${request.userId} not found") }
+
+        val account = accountRepository.findById(request.accountId)
+            .orElseThrow { IllegalArgumentException("Account with ID ${request.accountId} not found") }
+
+        val membershipTier = when {
+            request.tierPoints >= 5000 -> MembershipTier.GOLD
+            request.tierPoints >= 3000 -> MembershipTier.SILVER
+            else -> MembershipTier.BRONZE
+        }
+
+        val membership = membershipRepository.findByName(membershipTier)
+            ?: throw IllegalStateException("Membership tier $membershipTier not found in DB")
 
         val newMembership = UserMembership(
             user = user,
@@ -51,7 +63,7 @@ class UserMembershipService(
             userId = entity.user.id ?: -1,
             username = entity.user.username,
             accountId = entity.account.id,
-            membershipTierName = entity.membershipTier.name.toString(),
+            membershipTierName = entity.membershipTierName,
             startedAt = entity.startedAt,
             endedAt = entity.endedAt,
             tierPoints = entity.tierPoints

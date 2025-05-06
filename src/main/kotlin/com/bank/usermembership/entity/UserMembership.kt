@@ -26,7 +26,7 @@ data class UserMembership(
     @JoinColumn(name = "membership_tier_id", nullable = false)
     val membershipTier: Membership,
 
-    @JoinColumn(name = "membership_tier_name", nullable = false)
+    @Column(name = "membership_tier_name", nullable = false)
     val membershipTierName: String,
 
     @Column(nullable = false)
@@ -39,14 +39,15 @@ data class UserMembership(
     val tierPoints: Int = 0
 )
 
+
 data class UserMembershipRequest(
     val userId: Long,
     val accountId: Long,
-    val membershipTierId: Long,
     val startedAt: LocalDateTime,
     val endedAt: LocalDateTime?,
     val tierPoints: Int
 )
+
 
 
 data class UserMembershipResponse(
