@@ -21,13 +21,18 @@ class TransactionsController(
         return transactionsService.depositAccount(request, user.id)
     }
     @PostMapping("/api/v1/accounts/withdraw")
-    fun withdrawAccount(@RequestBody request: DepositRequest): ResponseEntity<*> {
+    fun withdrawAccount(@RequestBody request: WithdrawRequest): ResponseEntity<*> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username) ?: throw IllegalArgumentException("user was not found...")
         return transactionsService.withdrawAccount(request, user.id)
     }
 
-//    @PostMapping("api/v1/accounts/transfer")
+    @PostMapping("/api/v1/accounts/transfer")
+    fun transferAccounts(@RequestBody request: TransferRequest): ResponseEntity<*> {
+        val username = SecurityContextHolder.getContext().authentication.name
+        val user = userRepository.findByUsername(username) ?: throw IllegalArgumentException("user was not found...")
+        return transactionsService.transferAccounts(request, user.id)
+    }
 }
 
 data class DepositRequest(
@@ -49,3 +54,14 @@ data class WithdrawRequest(
 data class WithdrawResponse(
     val newBalance: BigDecimal
 )
+
+data class TransferRequest(
+    val sourceAccount: String,
+    val destinationAccount: String,
+    val amount: BigDecimal,
+    val countryCode: String
+)
+
+//data class TransferResponse(
+//
+//)

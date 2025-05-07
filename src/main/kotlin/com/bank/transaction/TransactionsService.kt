@@ -6,20 +6,24 @@ import com.bank.currency.CurrencyRepository
 import com.bank.exchange.ExchangeRateApi
 import com.bank.promocode.PromoCodeRepository
 import com.bank.serverMcCache
-import com.bank.user.UserRepository
 import com.hazelcast.logging.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
+import java.lang.Thread.sleep
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
 private val  loggerAccount = Logger.getLogger("account")
+const val TRANSACTION_TYPE_DEPOSIT = 103
+const val TRANSACTION_TYPE_WITHDRAW = 104
+const val TRANSACTION_TYPE_TRANSFER = 101
+
+
 
 @Service
 class TransactionsService(
-    private val userRepository: UserRepository,
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val promoCodeRepository: PromoCodeRepository,
@@ -35,7 +39,7 @@ class TransactionsService(
         val requestedCurrency = currencyRepository.findByCountryCode(request.countryCode)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "Currency not supported"))
 
-        val promoCode = promoCodeRepository.findByCode(103)
+        val promoCode = promoCodeRepository.findByCode(TRANSACTION_TYPE_DEPOSIT)
 
         if (account.user.id != userId) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "unauthorized access"))
@@ -46,7 +50,7 @@ class TransactionsService(
         }
 
         if (request.amount < BigDecimal("1.000") || request.amount > BigDecimal("100000.000")) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "amount must be between ${account.currency.countryCode}1 and ${account.currency.countryCode}100,000"))
+            return ResponseEntity.badRequest().body(mapOf("error" to "amount must be between ${account.currency.symbol}1 and ${account.currency.symbol}100,000"))
         }
 //        if (account.currency.countryCode != request.countryCode) {
 //            return ResponseEntity.badRequest().body(mapOf("error" to "request currency does not match your accounts currency"))
@@ -65,12 +69,11 @@ class TransactionsService(
         transactionRepository.save(TransactionEntity(
             sourceAccount = null,
             destinationAccount = account,
-            currency = account.currency,
+            currency = requestedCurrency,
             amount = request.amount,
             timeStamp = LocalDateTime.now(),
             promoCode = promoCode,
-            status = TransactionStatus.COMPLETED,
-            transactionType = TransactionType.DEPOSIT
+            status = TransactionStatus.COMPLETED
         ))
 
         val message = if (wasConverted) {
@@ -86,14 +89,14 @@ class TransactionsService(
     }
 
 
-    fun withdrawAccount(request: DepositRequest, userId: Long?): ResponseEntity<*> {
+    fun withdrawAccount(request: WithdrawRequest, userId: Long?): ResponseEntity<*> {
         val account = accountRepository.findByAccountNumber(request.accountNumber)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "account with number ${request.accountNumber} was not found"))
 
         val requestedCurrency = currencyRepository.findByCountryCode(request.countryCode)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "Currency not supported"))
 
-        val promoCode = promoCodeRepository.findByCode(104)
+        val promoCode = promoCodeRepository.findByCode(TRANSACTION_TYPE_WITHDRAW)
 
         if (account.user.id != userId) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "Unauthorized access"))
@@ -108,11 +111,7 @@ class TransactionsService(
 //        }
 
         if (request.amount < BigDecimal("1.000") || request.amount > BigDecimal("100000.000")) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "amount must be between ${account.currency.countryCode}1 and ${account.currency.countryCode}100,000"))
-        }
-
-        if (request.amount > account.balance) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "insufficient balance"))
+            return ResponseEntity.badRequest().body(mapOf("error" to "amount must be between ${account.currency.symbol}1 and ${account.currency.symbol}100,000"))
         }
 
         val (finalAmount, wasConverted) = if (account.currency.countryCode != request.countryCode) {
@@ -122,18 +121,21 @@ class TransactionsService(
             request.amount to false
         }
 
+        if (finalAmount > account.balance) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "insufficient balance"))
+        }
+
         account.balance -= finalAmount
         accountRepository.save(account)
 
         transactionRepository.save(TransactionEntity(
             sourceAccount = account,
             destinationAccount = null,
-            currency = account.currency,
+            currency = requestedCurrency,
             amount = request.amount,
             timeStamp = LocalDateTime.now(),
             promoCode = promoCode,
-            status = TransactionStatus.COMPLETED,
-            transactionType = TransactionType.WITHDRAWAL
+            status = TransactionStatus.COMPLETED
 
         ))
 
@@ -146,6 +148,88 @@ class TransactionsService(
         val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
         loggerAccount.info("user=$userId withdrew from account=${account.accountNumber}...invalidating cache")
         accountCache.remove(userId)
+
+        return ResponseEntity.ok(mapOf("message" to message))
+    }
+
+    fun transferAccounts(request: TransferRequest, userId: Long?): ResponseEntity<*> {
+        println("in transfer function service")
+        val sourceAccount = accountRepository.findByAccountNumber(request.sourceAccount)
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "account with number ${request.sourceAccount} was not found"))
+
+        val destinationAccount = accountRepository.findByAccountNumber(request.destinationAccount)
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "account with number ${request.destinationAccount} was not found"))
+
+        val requestedCurrency = currencyRepository.findByCountryCode(request.countryCode)
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "unsupported currency"))
+
+        val promoCode = promoCodeRepository.findByCode(TRANSACTION_TYPE_TRANSFER)
+        println("after promo")
+
+        if (sourceAccount.user.id != userId) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "Unauthorized access"))
+        }
+
+        if (destinationAccount.user.id != userId) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "Unauthorized access"))
+        }
+
+        if (!sourceAccount.isActive) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "source account is not active..."))
+        }
+
+        if (!destinationAccount.isActive) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "destination account is not active..."))
+        }
+
+        if (request.amount < BigDecimal("1.000") || request.amount > BigDecimal("100000.000")) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "amount must be between ${requestedCurrency.symbol}1 and ${requestedCurrency.symbol}100,000"))
+        }
+
+        if (request.sourceAccount == request.destinationAccount) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "you cannot transfer funds between the same accounts..."))
+        }
+        println("after validation checkpoints")
+
+
+        val fromRate = if (request.countryCode != sourceAccount.currency.countryCode){exchangeRateApi.getRate(request.countryCode, sourceAccount.currency.countryCode)}
+        else{request.amount}
+        val sourceAmount = request.amount.multiply(fromRate).setScale(3, RoundingMode.HALF_UP)
+        //sleep(120)
+        val toRate = if(request.countryCode != destinationAccount.currency.countryCode) {exchangeRateApi.getRate(request.countryCode, destinationAccount.currency.countryCode)}
+        else{request.amount}
+        val destinationAmount = request.amount.multiply(toRate).setScale(3, RoundingMode.HALF_UP)
+
+        if (sourceAmount > sourceAccount.balance) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "insufficient balance"))
+        }
+
+        println("after conversions")
+        sourceAccount.balance -= sourceAmount
+        destinationAccount.balance += destinationAmount
+
+        accountRepository.save(sourceAccount)
+        accountRepository.save(destinationAccount)
+        println("after account saves")
+
+        transactionRepository.save(TransactionEntity(
+            sourceAccount = sourceAccount,
+            destinationAccount = destinationAccount,
+            currency = requestedCurrency,
+            amount = request.amount,
+            timeStamp = LocalDateTime.now(),
+            promoCode = promoCode,
+            status = TransactionStatus.COMPLETED
+        ))
+        println("saved everything")
+        val message = buildString {
+            append("Transferred ${requestedCurrency.symbol}${request.amount} ")
+            if (request.countryCode != sourceAccount.currency.countryCode)
+                append("(${sourceAccount.currency.symbol}$sourceAmount withdrawn) ")
+            if (request.countryCode != destinationAccount.currency.countryCode)
+                append("(${destinationAccount.currency.symbol}$destinationAmount deposited) ")
+            append("from ${request.sourceAccount} to ${request.destinationAccount}.")
+        }
 
         return ResponseEntity.ok(mapOf("message" to message))
     }

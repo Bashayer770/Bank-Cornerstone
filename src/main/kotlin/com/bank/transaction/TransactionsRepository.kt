@@ -48,14 +48,10 @@ data class TransactionEntity(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promo_code_id")
-    val promoCode: PromoCodeEntity? = null,
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "transaction_type")
-    val transactionType: TransactionType? = null
+    val promoCode: PromoCodeEntity? = null
 
 ) {
-    constructor() : this(null, null, null, CurrencyEntity(), BigDecimal("0.0"), null, LocalDateTime.now(), PromoCodeEntity(), null)
+    constructor() : this(null, null, null, CurrencyEntity(), BigDecimal("0.0"), null, LocalDateTime.now(), PromoCodeEntity())
 }
 
 enum class TransactionStatus {
@@ -65,8 +61,3 @@ enum class TransactionStatus {
     CANCELLED
 }
 
-enum class TransactionType {
-    TRANSFER,
-    DEPOSIT,
-    WITHDRAWAL
-}
