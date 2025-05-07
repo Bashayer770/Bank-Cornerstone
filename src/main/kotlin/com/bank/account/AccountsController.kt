@@ -51,7 +51,7 @@ class AccountsController(
 
 data class CreateAccount(
     val initialBalance: BigDecimal,
-    val currencyCode: String,
+    val countryCode: String,
     val accountType: String
 )
 
@@ -60,6 +60,6 @@ data class AccountResponse(
     val accountNumber: String,
     val accountType: String,
     val createdAt: LocalDateTime,
-    val currencyCode: String,
+    val countryCode: String,
     val symbol: String
 )

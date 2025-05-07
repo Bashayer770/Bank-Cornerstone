@@ -28,23 +28,25 @@ class AccountsService(
             return ResponseEntity.ok(it)
         }
 
-        val accounts = accountRepository.findByUserId(userId).filter { it.isActive }
-        if (accounts.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "no accounts found for user ID $userId"))
+        val accounts = accountRepository.findByUserId(userId)?.filter { it.isActive }
+        if (accounts != null) {
+            if (accounts.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(mapOf("error" to "no accounts found for user ID $userId"))
+            }
         }
 
-        val response = accounts.map {
-                AccountResponse(
-                    initialBalance = it.balance,
-                    accountNumber = it.accountNumber,
-                    accountType = it.accountType,
-                    createdAt = it.createdAt,
-                    currencyCode = it.currency.countryCode,
-                    symbol = it.currency.symbol
+        val response = accounts?.map {
+            AccountResponse(
+                initialBalance = it.balance,
+                accountNumber = it.accountNumber,
+                accountType = it.accountType,
+                createdAt = it.createdAt,
+                countryCode = it.currency.countryCode,
+                symbol = it.currency.symbol
 
-                )
-            }
+            )
+        }
 
         loggerAccount.info("No account(s) found, caching new data...")
         accountCache[userId] = response
@@ -52,10 +54,10 @@ class AccountsService(
     }
 
     fun createAccount(request: CreateAccount, userId: Long?): ResponseEntity<Any> {
-        val currency = currencyRepository.findByCountryCode(request.currencyCode)
+        val currency = currencyRepository.findByCountryCode(request.countryCode)
             ?: return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "Invalid currency code: ${request.currencyCode}"))
+                .body(mapOf("error" to "Invalid currency code: ${request.countryCode}"))
 
         val user = userRepository.findById(userId)
             ?: return ResponseEntity
@@ -65,7 +67,7 @@ class AccountsService(
         if (request.initialBalance < BigDecimal(0.000) || request.initialBalance > BigDecimal(1000000.000)) {
             return ResponseEntity
                 .badRequest()
-                .body(mapOf("error" to "Initial balance must be between 0 and 1,000,000 ${currency.countryCode}"))
+                .body(mapOf("error" to "Initial balance must be between ${currency.symbol}0 and ${currency.symbol}1,000,000"))
         }
 
         val userAccounts = accountRepository.findAll().filter { it.user.id == user.id && it.isActive }
@@ -94,7 +96,7 @@ class AccountsService(
             accountNumber = account.accountNumber,
             accountType = account.accountType,
             createdAt = account.createdAt,
-            currencyCode = account.currency.countryCode,
+            countryCode = account.currency.countryCode,
             symbol = account.currency.symbol
         ))
     }

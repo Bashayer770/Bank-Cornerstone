@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface PromoCodeRepository : JpaRepository<PromoCodeEntity, Long> {
-//    fun findByCode(code: String): PromoCodeEntity?
+fun findByCode(code: Int): PromoCodeEntity?
 }
 
 @Entity
@@ -16,9 +16,9 @@ data class PromoCodeEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
-    val code: String,
+    val code: Int,
 
     val description: String
 ) {
-    constructor() : this(null, "", "")
+    constructor() : this(null, 0, "")
 }

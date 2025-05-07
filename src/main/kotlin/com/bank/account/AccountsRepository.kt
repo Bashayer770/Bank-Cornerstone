@@ -11,9 +11,10 @@ import java.time.LocalDateTime
 
 @Repository
 interface AccountRepository : JpaRepository<AccountEntity, Long> {
-    fun findByUserId(userId: Long?): List<AccountEntity>
-    fun findByCurrencyId(currencyId: Long): List<AccountEntity>
+    fun findByUserId(userId: Long?): List<AccountEntity>?
+    fun findByCurrencyId(currencyId: Long): List<AccountEntity>?
     fun existsByAccountNumber(accountNumber: String): Boolean
+    fun findByAccountNumber(accountNumber: String): AccountEntity?
 }
 
 @Entity
@@ -28,7 +29,7 @@ data class AccountEntity(
     val user: UserEntity,
 
     @Column(precision = 9, scale = 3)
-    val balance: BigDecimal,
+    var balance: BigDecimal,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_id", referencedColumnName = "id")

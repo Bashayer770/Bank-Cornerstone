@@ -35,7 +35,9 @@ class SecurityConfig(
                 it.requestMatchers(
                     "/api/v1/users/kyc",
                     "/api/v1/users/accounts",
-                    "/api/v1/users/accounts/{accountNumber}").authenticated()
+                    "/api/v1/users/accounts/{accountNumber}",
+                    "/api/v1/accounts/deposit",
+                    "/api/v1/accounts/withdraw").authenticated()
                     .anyRequest().authenticated()
             }
             .sessionManagement {
