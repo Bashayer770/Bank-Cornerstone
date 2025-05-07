@@ -1,13 +1,17 @@
 package com.bank.account
 
 import com.bank.currency.CurrencyRepository
+import com.bank.serverMcCache
 import com.bank.user.UserRepository
+import com.hazelcast.logging.Logger
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.security.SecureRandom
 import java.time.LocalDateTime
+
+private val  loggerAccount = Logger.getLogger("account")
 
 
 @Service
@@ -17,15 +21,21 @@ class AccountsService(
     private val currencyRepository: CurrencyRepository
 ) {
     fun listUserAccounts(userId: Long?): ResponseEntity<Any> {
+       val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+
+        accountCache[userId]?.let {
+            loggerAccount.info("Returning list of accounts for userId=$userId")
+            return ResponseEntity.ok(it)
+        }
+
         val accounts = accountRepository.findByUserId(userId).filter { it.isActive }
         if (accounts.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "no accounts found for user ID $userId"))
         }
 
-        return ResponseEntity.ok().body(
-            accounts.map {
-                AccountResponseDTO(
+        val response = accounts.map {
+                AccountResponse(
                     initialBalance = it.balance,
                     accountNumber = it.accountNumber,
                     accountType = it.accountType,
@@ -35,10 +45,13 @@ class AccountsService(
 
                 )
             }
-        )
+
+        loggerAccount.info("No account(s) found, caching new data...")
+        accountCache[userId] = response
+        return ResponseEntity.ok(response)
     }
 
-    fun createAccount(request: CreateAccountDTO, userId: Long?): ResponseEntity<Any> {
+    fun createAccount(request: CreateAccount, userId: Long?): ResponseEntity<Any> {
         val currency = currencyRepository.findByCountryCode(request.currencyCode)
             ?: return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -72,7 +85,11 @@ class AccountsService(
             accountType = request.accountType
         ))
 
-        return ResponseEntity.ok().body(AccountResponseDTO(
+        val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+        loggerAccount.info("account=${account.accountNumber} for userId=$userId has been created...invalidating cache")
+        accountCache.remove(userId)
+
+        return ResponseEntity.ok().body(AccountResponse(
             initialBalance = account.balance,
             accountNumber = account.accountNumber,
             accountType = account.accountType,
@@ -100,6 +117,11 @@ class AccountsService(
 
         val closedAccount = account.copy(isActive = false)
         accountRepository.save(closedAccount)
+
+
+        val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+        loggerAccount.info("account=$accountNumber for userId=$userId has been closed...invalidating cache")
+        accountCache.remove(userId)
 
         return ResponseEntity.ok(mapOf("message" to "account closed successfully"))
     }

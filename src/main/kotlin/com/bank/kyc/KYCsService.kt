@@ -1,11 +1,14 @@
 package com.bank.kyc
 
+import com.bank.serverMcCache
 import com.bank.user.UserRepository
+import com.hazelcast.logging.Logger
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
+private val loggerKyc = Logger.getLogger("kyc")
 
 
 @Service
@@ -13,27 +16,37 @@ class KYCsService(
     private val kycRepository: KYCRepository,
     private val userRepository: UserRepository
 ) {
-    fun getKYC(userId: Long): ResponseEntity<Any> {
+    fun getKYC(userId: Long): ResponseEntity<*> {
+        val kycCache = serverMcCache.getMap<Long, KYCResponse>("kyc")
+
+        kycCache[userId]?.let {
+            loggerKyc.info("Returning KYC for userId=$userId")
+            return ResponseEntity.ok(it)
+        }
+
         val kyc = kycRepository.findByUserId(userId)
             ?: return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "User with ID $userId was not found"))
 
-        return ResponseEntity.ok(
-            KYCResponseDTO(
-                firstName = kyc.firstName,
-                lastName = kyc.lastName,
-                dateOfBirth = kyc.dateOfBirth,
-                civilId = kyc.civilId,
-                phoneNumber = kyc.phoneNumber,
-                homeAddress = kyc.homeAddress,
-                salary = kyc.salary,
-                country = kyc.country
-            )
+        val response = KYCResponse(
+            firstName = kyc.firstName,
+            lastName = kyc.lastName,
+            dateOfBirth = kyc.dateOfBirth,
+            civilId = kyc.civilId,
+            phoneNumber = kyc.phoneNumber,
+            homeAddress = kyc.homeAddress,
+            salary = kyc.salary,
+            country = kyc.country
         )
+
+        loggerKyc.info("No KYC found, caching new data...")
+        kycCache[userId] = response
+        return ResponseEntity.ok(response)
     }
 
-    fun addOrUpdateKYC(request: KYCRequestDTO, userId: Long): ResponseEntity<Any> {
+
+    fun addOrUpdateKYC(request: KYCRequest, userId: Long): ResponseEntity<Any> {
         val user = userRepository.findById(userId).orElse(null)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "User with ID $userId was not found"))
@@ -77,8 +90,12 @@ class KYCsService(
 
         kycRepository.save(kyc) // saving the new/updated data
 
+        val kycCache = serverMcCache.getMap<Long, KYCResponse>("kyc")
+        loggerKyc.info("KYC for userId=$userId has been updated...invalidating cache")
+        kycCache.remove(userId)
+
         return ResponseEntity.ok(user.id?.let {
-            KYCResponseDTO( // returning the results of the operation to the client
+            KYCResponse( // returning the results of the operation to the client
                 firstName = kyc.firstName,
                 lastName = kyc.lastName,
                 dateOfBirth = kyc.dateOfBirth,

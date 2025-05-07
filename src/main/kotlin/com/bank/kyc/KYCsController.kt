@@ -20,10 +20,11 @@ class KYCsController(
             ?: throw IllegalArgumentException("user has no id...")
 
         return user.id?.let { kycsService.getKYC(it) }
+
     }
 
     @PostMapping("/api/v1/users/kyc")
-    fun addOrUpdateMyKYC(@RequestBody request: KYCRequestDTO): ResponseEntity<*>? {
+    fun addOrUpdateMyKYC(@RequestBody request: KYCRequest): ResponseEntity<*>? {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)
             ?: throw IllegalArgumentException("user has no id...")
@@ -33,7 +34,7 @@ class KYCsController(
 }
 
 
-class KYCRequestDTO(
+class KYCRequest(
     val firstName: String,
     val lastName: String,
     val dateOfBirth: LocalDate,
@@ -45,7 +46,7 @@ class KYCRequestDTO(
 
 )
 
-data class KYCResponseDTO(
+data class KYCResponse(
     val firstName: String,
     val lastName: String,
     val dateOfBirth: LocalDate,

@@ -28,7 +28,7 @@ class AccountsController(
     }
 
     @PostMapping("/api/v1/users/accounts")
-    fun createAccount(@RequestBody request: CreateAccountDTO): ResponseEntity<Any> {
+    fun createAccount(@RequestBody request: CreateAccount): ResponseEntity<Any> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username)
             ?: throw IllegalArgumentException("user has no id...")
@@ -49,13 +49,13 @@ class AccountsController(
 
 }
 
-data class CreateAccountDTO(
+data class CreateAccount(
     val initialBalance: BigDecimal,
     val currencyCode: String,
     val accountType: String
 )
 
-data class AccountResponseDTO(
+data class AccountResponse(
     val initialBalance: BigDecimal,
     val accountNumber: String,
     val accountType: String,
