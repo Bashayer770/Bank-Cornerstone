@@ -56,7 +56,7 @@ data class CreateAccount(
 )
 
 data class AccountResponse(
-    val initialBalance: BigDecimal,
+    val balance: BigDecimal,
     val accountNumber: String,
     val accountType: String,
     val createdAt: LocalDateTime,

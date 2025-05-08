@@ -42,7 +42,10 @@ data class DepositRequest(
 )
 
 data class DepositResponse(
-    val newBalance: BigDecimal
+    val newBalance: BigDecimal,
+    val transferStatus: String,
+    val isConverted: Boolean,
+    val amountDeposited: BigDecimal
 )
 
 data class WithdrawRequest(
@@ -52,7 +55,10 @@ data class WithdrawRequest(
 )
 
 data class WithdrawResponse(
-    val newBalance: BigDecimal
+    val newBalance: BigDecimal,
+    val transferStatus: String,
+    val isConverted: Boolean,
+    val amountWithdrawn: BigDecimal
 )
 
 data class TransferRequest(
@@ -62,6 +68,10 @@ data class TransferRequest(
     val countryCode: String
 )
 
-//data class TransferResponse(
-//
-//)
+data class TransferResponse(
+    val sourceNewBalance: BigDecimal,
+    val transferStatus: String,
+    val isSourceConverted: Boolean,
+    val sourceAmountWithdrawn: BigDecimal,
+    val transferFee: BigDecimal
+)

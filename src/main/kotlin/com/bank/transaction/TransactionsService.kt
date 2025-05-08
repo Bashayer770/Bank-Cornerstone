@@ -15,11 +15,11 @@ import java.lang.Thread.sleep
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
-private val  loggerAccount = Logger.getLogger("account")
+private val loggerAccount = Logger.getLogger("account")
 const val TRANSACTION_TYPE_DEPOSIT = 103
 const val TRANSACTION_TYPE_WITHDRAW = 104
 const val TRANSACTION_TYPE_TRANSFER = 101
-
+const val TRANSACTION_TYPE_FEE = 102
 
 
 @Service
@@ -39,7 +39,9 @@ class TransactionsService(
         val requestedCurrency = currencyRepository.findByCountryCode(request.countryCode)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "Currency not supported"))
 
-        val promoCode = promoCodeRepository.findByCode(TRANSACTION_TYPE_DEPOSIT)
+        val promoCodeDeposit = promoCodeRepository.findByCode(TRANSACTION_TYPE_DEPOSIT)
+        val promoCodeFee = promoCodeRepository.findByCode(TRANSACTION_TYPE_FEE)
+
 
         if (account.user.id != userId) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "unauthorized access"))
@@ -52,9 +54,6 @@ class TransactionsService(
         if (request.amount < BigDecimal("1.000") || request.amount > BigDecimal("100000.000")) {
             return ResponseEntity.badRequest().body(mapOf("error" to "amount must be between ${account.currency.symbol}1 and ${account.currency.symbol}100,000"))
         }
-//        if (account.currency.countryCode != request.countryCode) {
-//            return ResponseEntity.badRequest().body(mapOf("error" to "request currency does not match your accounts currency"))
-//        }
 
         val (finalAmount, wasConverted) = if (account.currency.countryCode != request.countryCode) {
             val conversionRate = exchangeRateApi.getRate(request.countryCode, account.currency.countryCode)
@@ -72,20 +71,20 @@ class TransactionsService(
             currency = requestedCurrency,
             amount = request.amount,
             timeStamp = LocalDateTime.now(),
-            promoCode = promoCode,
+            promoCode = promoCodeDeposit,
             status = TransactionStatus.COMPLETED
         ))
-
-        val message = if (wasConverted) {
-            "Converted ${requestedCurrency.symbol}${request.amount} to ${account.currency.symbol}${finalAmount} and deposited successfully. new balance: ${account.currency.symbol}${account.balance}"
-        } else {
-            "${account.currency.symbol}${finalAmount} deposited successfully. new balance: ${account.currency.symbol}${account.balance}"
-        }
 
         val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
         loggerAccount.info("user=$userId deposited into account=${account.accountNumber}...invalidating cache")
         accountCache.remove(userId)
-        return ResponseEntity.ok(mapOf("message" to message))
+
+        return ResponseEntity.ok().body(DepositResponse(
+            newBalance = account.balance,
+            transferStatus = TransactionStatus.COMPLETED.toString(),
+            isConverted = wasConverted,
+            amountDeposited = finalAmount
+        ))
     }
 
 
@@ -105,10 +104,6 @@ class TransactionsService(
         if (!account.isActive) {
             return ResponseEntity.badRequest().body(mapOf("error" to "account is not active..."))
         }
-
-//        if (account.currency.countryCode != request.countryCode) {
-//            return ResponseEntity.badRequest().body(mapOf("error" to "request currency does not match your accounts currency"))
-//        }
 
         if (request.amount < BigDecimal("1.000") || request.amount > BigDecimal("100000.000")) {
             return ResponseEntity.badRequest().body(mapOf("error" to "amount must be between ${account.currency.symbol}1 and ${account.currency.symbol}100,000"))
@@ -139,17 +134,16 @@ class TransactionsService(
 
         ))
 
-        val message = if (wasConverted) {
-            "Converted ${requestedCurrency.symbol}${request.amount} to ${account.currency.symbol}${finalAmount} and withdrawn successfully. new balance: ${account.currency.symbol}${account.balance}"
-        } else {
-            "${account.currency.symbol}${finalAmount} withdrawn successfully. new balance: ${account.currency.symbol}${account.balance}"
-        }
-
         val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
         loggerAccount.info("user=$userId withdrew from account=${account.accountNumber}...invalidating cache")
         accountCache.remove(userId)
 
-        return ResponseEntity.ok(mapOf("message" to message))
+        return ResponseEntity.ok().body(WithdrawResponse(
+            newBalance = account.balance,
+            transferStatus = TransactionStatus.COMPLETED.toString(),
+            isConverted = wasConverted,
+            amountWithdrawn = finalAmount
+        ))
     }
 
     fun transferAccounts(request: TransferRequest, userId: Long?): ResponseEntity<*> {
@@ -164,7 +158,8 @@ class TransactionsService(
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "unsupported currency"))
 
         val promoCode = promoCodeRepository.findByCode(TRANSACTION_TYPE_TRANSFER)
-        println("after promo")
+
+        val feePromo = promoCodeRepository.findByCode(TRANSACTION_TYPE_FEE)
 
         if (sourceAccount.user.id != userId) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "Unauthorized access"))
@@ -187,30 +182,39 @@ class TransactionsService(
         }
 
         if (request.sourceAccount == request.destinationAccount) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "you cannot transfer funds between the same accounts..."))
+            return ResponseEntity.badRequest().body(mapOf("error" to "you cannot transfer funds between the same account..."))
         }
-        println("after validation checkpoints")
 
-
-        val fromRate = if (request.countryCode != sourceAccount.currency.countryCode){exchangeRateApi.getRate(request.countryCode, sourceAccount.currency.countryCode)}
-        else{request.amount}
+        val (fromRate, wasSourceConverted) = if (request.countryCode != sourceAccount.currency.countryCode){exchangeRateApi.getRate(request.countryCode, sourceAccount.currency.countryCode) to true}
+        else{BigDecimal("1.000") to false}
         val sourceAmount = request.amount.multiply(fromRate).setScale(3, RoundingMode.HALF_UP)
-        //sleep(120)
-        val toRate = if(request.countryCode != destinationAccount.currency.countryCode) {exchangeRateApi.getRate(request.countryCode, destinationAccount.currency.countryCode)}
-        else{request.amount}
+
+        val (toRate, wasDestinationConverted) = if(request.countryCode != destinationAccount.currency.countryCode) {exchangeRateApi.getRate(request.countryCode, destinationAccount.currency.countryCode) to true}
+        else{BigDecimal("1.000") to false}
         val destinationAmount = request.amount.multiply(toRate).setScale(3, RoundingMode.HALF_UP)
+
+        val feeRate = if("USD" != sourceAccount.currency.countryCode){exchangeRateApi.getRate("USD", sourceAccount.currency.countryCode)}
+        else{BigDecimal("1.000")}
+        val feeInAccountCurrency =
+            feeRate.multiply(BigDecimal("15.000"))
+            .setScale(3, RoundingMode.HALF_UP)
 
         if (sourceAmount > sourceAccount.balance) {
             return ResponseEntity.badRequest().body(mapOf("error" to "insufficient balance"))
         }
 
-        println("after conversions")
         sourceAccount.balance -= sourceAmount
+
+        if (feeInAccountCurrency > sourceAccount.balance) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "insufficient balance"))
+        }
+
+        sourceAccount.balance -= feeInAccountCurrency
         destinationAccount.balance += destinationAmount
+
 
         accountRepository.save(sourceAccount)
         accountRepository.save(destinationAccount)
-        println("after account saves")
 
         transactionRepository.save(TransactionEntity(
             sourceAccount = sourceAccount,
@@ -221,16 +225,27 @@ class TransactionsService(
             promoCode = promoCode,
             status = TransactionStatus.COMPLETED
         ))
-        println("saved everything")
-        val message = buildString {
-            append("Transferred ${requestedCurrency.symbol}${request.amount} ")
-            if (request.countryCode != sourceAccount.currency.countryCode)
-                append("(${sourceAccount.currency.symbol}$sourceAmount withdrawn) ")
-            if (request.countryCode != destinationAccount.currency.countryCode)
-                append("(${destinationAccount.currency.symbol}$destinationAmount deposited) ")
-            append("from ${request.sourceAccount} to ${request.destinationAccount}.")
-        }
 
-        return ResponseEntity.ok(mapOf("message" to message))
+        transactionRepository.save(TransactionEntity(
+            sourceAccount = sourceAccount,
+            destinationAccount = null,
+            currency = sourceAccount.currency,
+            amount = feeInAccountCurrency,
+            timeStamp = LocalDateTime.now(),
+            promoCode = feePromo,
+            status = TransactionStatus.COMPLETED
+        ))
+
+        val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+        loggerAccount.info("transfer occurred...invalidating cache")
+        accountCache.remove(userId)
+
+        return ResponseEntity.ok().body(TransferResponse(
+            sourceNewBalance = sourceAccount.balance,
+            transferStatus = TransactionStatus.COMPLETED.toString(),
+            isSourceConverted = wasSourceConverted,
+            sourceAmountWithdrawn = sourceAmount,
+            transferFee = feeInAccountCurrency
+        ))
     }
 }

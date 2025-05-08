@@ -32,13 +32,13 @@ class AccountsService(
         if (accounts != null) {
             if (accounts.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(mapOf("error" to "no accounts found for user ID $userId"))
+                    .body(mapOf("error" to "no accounts found for this user"))
             }
         }
 
         val response = accounts?.map {
             AccountResponse(
-                initialBalance = it.balance,
+                balance = it.balance,
                 accountNumber = it.accountNumber,
                 accountType = it.accountType,
                 createdAt = it.createdAt,
@@ -62,7 +62,7 @@ class AccountsService(
         val user = userRepository.findById(userId)
             ?: return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(mapOf("error" to "user with ID $userId was not found"))
+                .body(mapOf("error" to "user with was not found"))
 
         if (request.initialBalance < BigDecimal(0.000) || request.initialBalance > BigDecimal(1000000.000)) {
             return ResponseEntity
@@ -92,7 +92,7 @@ class AccountsService(
         accountCache.remove(userId)
 
         return ResponseEntity.ok().body(AccountResponse(
-            initialBalance = account.balance,
+            balance = account.balance,
             accountNumber = account.accountNumber,
             accountType = account.accountType,
             createdAt = account.createdAt,

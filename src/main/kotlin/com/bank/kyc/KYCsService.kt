@@ -27,7 +27,7 @@ class KYCsService(
         val kyc = kycRepository.findByUserId(userId)
             ?: return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "User with ID $userId was not found"))
+                .body(mapOf("error" to "user was not found"))
 
         val response = KYCResponse(
             firstName = kyc.firstName,
@@ -49,7 +49,7 @@ class KYCsService(
     fun addOrUpdateKYC(request: KYCRequest, userId: Long): ResponseEntity<Any> {
         val user = userRepository.findById(userId).orElse(null)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("error" to "User with ID $userId was not found"))
+                .body(mapOf("error" to "user was not found"))
 
         val existing =
             kycRepository.findByUserId(userId) // retrieving whatever data available in the KYC database for this user
