@@ -1,17 +1,18 @@
 package com.bank.transaction
 
 import com.bank.account.AccountRepository
-import com.bank.account.AccountResponse
+import com.bank.account.ListAccountResponse
 import com.bank.currency.CurrencyRepository
 import com.bank.exchange.ExchangeRateApi
+import com.bank.membership.MembershipRepository
 import com.bank.promocode.PromoCodeRepository
 import com.bank.serverMcCache
+import com.bank.usermembership.UserMembershipRepository
 import com.hazelcast.logging.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
-import java.lang.Thread.sleep
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
@@ -28,6 +29,8 @@ class TransactionsService(
     private val transactionRepository: TransactionRepository,
     private val promoCodeRepository: PromoCodeRepository,
     private val currencyRepository: CurrencyRepository,
+    private val userMembershipRepository: UserMembershipRepository,
+    private val membershipRepository: MembershipRepository
 ) {
     @Autowired
     private lateinit var exchangeRateApi: ExchangeRateApi
@@ -39,9 +42,10 @@ class TransactionsService(
         val requestedCurrency = currencyRepository.findByCountryCode(request.countryCode)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "Currency not supported"))
 
-        val promoCodeDeposit = promoCodeRepository.findByCode(TRANSACTION_TYPE_DEPOSIT)
-        val promoCodeFee = promoCodeRepository.findByCode(TRANSACTION_TYPE_FEE)
+        val userMembership = account.id?.let { userMembershipRepository.findByAccountId(it) }
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "Membership not found"))
 
+        val promoCodeDeposit = promoCodeRepository.findByCode(TRANSACTION_TYPE_DEPOSIT)
 
         if (account.user.id != userId) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "unauthorized access"))
@@ -75,7 +79,28 @@ class TransactionsService(
             status = TransactionStatus.COMPLETED
         ))
 
-        val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+        val earnedPoints = request.amount.multiply(BigDecimal("0.015")).toInt()
+        val updatedPoints = userMembership.tierPoints + earnedPoints
+
+        val allTiers = membershipRepository.findAll().sortedBy { it.memberLimit }
+        val nextTier = allTiers
+            .filter { updatedPoints >= it.memberLimit }
+            .maxByOrNull { it.memberLimit }
+            ?: allTiers.first()
+
+
+        val updatedMembership = if (nextTier.id != userMembership.membershipTier.id) {
+            userMembership.copy(
+                tierPoints = updatedPoints,
+                membershipTier = nextTier
+            )
+        } else {
+            userMembership.copy(tierPoints = updatedPoints)
+        }
+
+        userMembershipRepository.save(updatedMembership)
+
+        val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
         loggerAccount.info("user=$userId deposited into account=${account.accountNumber}...invalidating cache")
         accountCache.remove(userId)
 
@@ -134,7 +159,7 @@ class TransactionsService(
 
         ))
 
-        val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+        val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
         loggerAccount.info("user=$userId withdrew from account=${account.accountNumber}...invalidating cache")
         accountCache.remove(userId)
 
@@ -147,7 +172,7 @@ class TransactionsService(
     }
 
     fun transferAccounts(request: TransferRequest, userId: Long?): ResponseEntity<*> {
-        println("in transfer function service")
+
         val sourceAccount = accountRepository.findByAccountNumber(request.sourceAccount)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "account with number ${request.sourceAccount} was not found"))
 
@@ -156,6 +181,12 @@ class TransactionsService(
 
         val requestedCurrency = currencyRepository.findByCountryCode(request.countryCode)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "unsupported currency"))
+
+        val userSourceMembership = sourceAccount.id?.let { userMembershipRepository.findByAccountId(it) }
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "membership for source account not found"))
+
+        val userDestinationMembership = destinationAccount.id?.let { userMembershipRepository.findByAccountId(it) }
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "membership for destination account not found"))
 
         val promoCode = promoCodeRepository.findByCode(TRANSACTION_TYPE_TRANSFER)
 
@@ -195,9 +226,13 @@ class TransactionsService(
 
         val feeRate = if("USD" != sourceAccount.currency.countryCode){exchangeRateApi.getRate("USD", sourceAccount.currency.countryCode)}
         else{BigDecimal("1.000")}
-        val feeInAccountCurrency =
-            feeRate.multiply(BigDecimal("15.000"))
+        val rawFee = BigDecimal("15.000")
+        val discountMultiplier = BigDecimal.ONE.subtract(userSourceMembership.membershipTier.discountAmount)
+        val feeInAccountCurrency = feeRate
+            .multiply(rawFee)
+            .multiply(discountMultiplier)
             .setScale(3, RoundingMode.HALF_UP)
+
 
         if (sourceAmount > sourceAccount.balance) {
             return ResponseEntity.badRequest().body(mapOf("error" to "insufficient balance"))
@@ -236,7 +271,49 @@ class TransactionsService(
             status = TransactionStatus.COMPLETED
         ))
 
-        val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+        val sourceEarnedPoints = request.amount.multiply(BigDecimal("0.015")).toInt()
+        val sourceUpdatedPoints = userSourceMembership.tierPoints + sourceEarnedPoints
+
+        val sourceAllTiers = membershipRepository.findAll().sortedBy { it.memberLimit }
+        val sourceNextTier = sourceAllTiers
+            .filter { sourceUpdatedPoints >= it.memberLimit }
+            .maxByOrNull { it.memberLimit }
+            ?: sourceAllTiers.first()
+
+
+        val sourceUpdatedMembership = if (sourceNextTier.id != userSourceMembership.membershipTier.id) {
+            userSourceMembership.copy(
+                tierPoints = sourceUpdatedPoints,
+                membershipTier = sourceNextTier
+            )
+        } else {
+            userSourceMembership.copy(tierPoints = sourceUpdatedPoints)
+        }
+
+        userMembershipRepository.save(sourceUpdatedMembership)
+
+        val destinationEarnedPoints = request.amount.multiply(BigDecimal("0.015")).toInt()
+        val destinationUpdatedPoints = userDestinationMembership.tierPoints + destinationEarnedPoints
+
+        val destinationAllTiers = membershipRepository.findAll().sortedBy { it.memberLimit }
+        val destinationNextTier = destinationAllTiers
+            .filter { destinationUpdatedPoints >= it.memberLimit }
+            .maxByOrNull { it.memberLimit }
+            ?: destinationAllTiers.first()
+
+
+        val destinationUpdatedMembership = if (destinationNextTier.id != userDestinationMembership.membershipTier.id) {
+            userDestinationMembership.copy(
+                tierPoints = destinationUpdatedPoints,
+                membershipTier = destinationNextTier
+            )
+        } else {
+            userDestinationMembership.copy(tierPoints = destinationUpdatedPoints)
+        }
+
+        userMembershipRepository.save(destinationUpdatedMembership)
+
+        val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
         loggerAccount.info("transfer occurred...invalidating cache")
         accountCache.remove(userId)
 

@@ -55,11 +55,21 @@ data class CreateAccount(
     val accountType: String
 )
 
-data class AccountResponse(
+data class ListAccountResponse(
     val balance: BigDecimal,
     val accountNumber: String,
     val accountType: String,
     val createdAt: LocalDateTime,
     val countryCode: String,
-    val symbol: String
+    val symbol: String,
+    val accountTier: String
+)
+
+data class CreateAccountResponse(
+    val balance: BigDecimal,
+    val accountNumber: String,
+    val accountType: String,
+    val createdAt: LocalDateTime,
+    val countryCode: String,
+    val symbol: String,
 )

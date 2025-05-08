@@ -1,8 +1,11 @@
 package com.bank.account
 
 import com.bank.currency.CurrencyRepository
+import com.bank.membership.MembershipRepository
 import com.bank.serverMcCache
 import com.bank.user.UserRepository
+import com.bank.usermembership.UserMembershipEntity
+import com.bank.usermembership.UserMembershipRepository
 import com.hazelcast.logging.Logger
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -18,10 +21,12 @@ private val  loggerAccount = Logger.getLogger("account")
 class AccountsService(
     private val accountRepository: AccountRepository,
     private val userRepository: UserRepository,
-    private val currencyRepository: CurrencyRepository
+    private val currencyRepository: CurrencyRepository,
+    private val userMembershipRepository: UserMembershipRepository,
+    private val membershipRepository: MembershipRepository
 ) {
     fun listUserAccounts(userId: Long?): ResponseEntity<Any> {
-       val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+       val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
 
         accountCache[userId]?.let {
             loggerAccount.info("Returning list of accounts for userId=$userId")
@@ -36,15 +41,18 @@ class AccountsService(
             }
         }
 
-        val response = accounts?.map {
-            AccountResponse(
-                balance = it.balance,
-                accountNumber = it.accountNumber,
-                accountType = it.accountType,
-                createdAt = it.createdAt,
-                countryCode = it.currency.countryCode,
-                symbol = it.currency.symbol
+        val response = accounts?.map { account ->
+            val membership = userMembershipRepository.findByAccountId(account.id!!)
+            val tierName = membership?.membershipTier?.tierName ?: "UNKNOWN"
 
+            ListAccountResponse(
+                balance = account.balance,
+                accountNumber = account.accountNumber,
+                accountType = account.accountType,
+                createdAt = account.createdAt,
+                countryCode = account.currency.countryCode,
+                symbol = account.currency.symbol,
+                accountTier = tierName
             )
         }
 
@@ -63,6 +71,9 @@ class AccountsService(
             ?: return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("error" to "user with was not found"))
+
+        val bronzeTier = membershipRepository.findByTierName("BRONZE")
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "could not find membership tier"))
 
         if (request.initialBalance < BigDecimal(0.000) || request.initialBalance > BigDecimal(1000000.000)) {
             return ResponseEntity
@@ -87,11 +98,18 @@ class AccountsService(
             accountType = request.accountType
         ))
 
-        val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+        userMembershipRepository.save(UserMembershipEntity(
+            user = user,
+            account = account,
+            membershipTier = bronzeTier,
+            tierPoints = 0
+        ))
+
+        val accountCache = serverMcCache.getMap<Long, List<CreateAccountResponse>>("account")
         loggerAccount.info("account=${account.accountNumber} for userId=$userId has been created...invalidating cache")
         accountCache.remove(userId)
 
-        return ResponseEntity.ok().body(AccountResponse(
+        return ResponseEntity.ok().body(CreateAccountResponse(
             balance = account.balance,
             accountNumber = account.accountNumber,
             accountType = account.accountType,
@@ -121,7 +139,7 @@ class AccountsService(
         accountRepository.save(closedAccount)
 
 
-        val accountCache = serverMcCache.getMap<Long, List<AccountResponse>>("account")
+        val accountCache = serverMcCache.getMap<Long, List<CreateAccountResponse>>("account")
         loggerAccount.info("account=$accountNumber for userId=$userId has been closed...invalidating cache")
         accountCache.remove(userId)
 

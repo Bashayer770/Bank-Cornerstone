@@ -1,12 +1,9 @@
 package com.bank.membership
 
-import com.bank.kyc.KYCResponse
-import com.bank.mcCacheConfig
 import com.bank.serverMcCache
 import com.hazelcast.logging.Logger
 import org.springframework.stereotype.Service
 import java.util.*
-import kotlin.NoSuchElementException
 private val loggerTiers = Logger.getLogger("tiers")
 
 
