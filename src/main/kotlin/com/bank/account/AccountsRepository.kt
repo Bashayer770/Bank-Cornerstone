@@ -2,7 +2,6 @@ package com.bank.account
 
 import com.bank.currency.CurrencyEntity
 import com.bank.user.UserEntity
-import com.bank.usermembership.UserMembershipEntity
 import jakarta.persistence.*
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository

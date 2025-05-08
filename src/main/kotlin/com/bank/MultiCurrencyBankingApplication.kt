@@ -16,6 +16,7 @@ fun main(args: Array<String>) {
     runApplication<MultiCurrencyBankingApplication>(*args)
     mcCacheConfig.getMapConfig("kyc").setTimeToLiveSeconds(60)
     mcCacheConfig.getMapConfig("account").setTimeToLiveSeconds(60)
+    mcCacheConfig.getMapConfig("tiers").setTimeToLiveSeconds(60)
 }
 
 val mcCacheConfig = Config("multi-currency-cache")

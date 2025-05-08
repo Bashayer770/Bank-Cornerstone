@@ -38,7 +38,9 @@ class SecurityConfig(
                     "/api/v1/users/accounts/{accountNumber}",
                     "/api/v1/accounts/deposit",
                     "/api/v1/accounts/withdraw",
-                    "/api/v1/accounts/transfer").authenticated()
+                    "/api/v1/accounts/transfer",
+                    "/api/v1/memberships/tier/{name}",
+                    "/api/v1/memberships").authenticated()
                     .anyRequest().authenticated()
             }
             .sessionManagement {

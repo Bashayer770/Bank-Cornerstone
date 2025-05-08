@@ -6,13 +6,13 @@ import org.springframework.stereotype.Repository
 import java.math.BigDecimal
 
 @Repository
-interface MembershipRepository : JpaRepository<MembershipEntity, Long> {
-    //fun findByName(name: String): MembershipEntity?
+interface MembershipRepository : JpaRepository<MembershipTierEntity, Long> {
+    fun findByTierName(tierName: String): MembershipTierEntity?
 }
 
 @Entity
-@Table(name = "memberships")
-data class MembershipEntity(
+@Table(name = "membership_tiers")
+data class MembershipTierEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -23,8 +23,8 @@ data class MembershipEntity(
     @Column(name = "member_limit")
     val memberLimit: Int,
 
-    @Column(name = "discount_amount", precision = 9, scale = 3)
+    @Column(name = "discount_amount")
     val discountAmount: BigDecimal
 ) {
-    constructor() : this(null, "BRONZE", 0, BigDecimal("0.050"))
+ constructor() : this(null, "", 0, BigDecimal.ZERO)
 }
