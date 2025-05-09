@@ -101,5 +101,6 @@ data class TransactionHistoryResponse(
     val currency: String,
     val amount: BigDecimal,
     val status: String,
-    val timeStamp: LocalDateTime
+    val timeStamp: LocalDateTime,
+    val transactionType: String
 )

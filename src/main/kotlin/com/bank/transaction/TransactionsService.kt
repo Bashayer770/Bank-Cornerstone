@@ -57,7 +57,8 @@ class TransactionsService(
             currency = account.currency.countryCode,
             amount = transactionHistory.amount,
             status = transactionHistory.status.toString(),
-            timeStamp = transactionHistory.timeStamp
+            timeStamp = transactionHistory.timeStamp,
+            transactionType = transactionHistory.promoCode?.description.toString()
         ) }
 
         loggerTransaction.info("No transaction(s) found, caching new data...")
@@ -131,15 +132,15 @@ class TransactionsService(
         userMembershipRepository.save(updatedMembership)
 
         val shopCache = serverMcCache.getMap<Long, List<ListItemsResponse>>("shop")
-        loggerShop.info("user membership for account=${account.id} has been updated...invalidating cache")
+        loggerShop.info("user membership for accountId=${account.id} has been updated...invalidating cache")
         shopCache.remove(account.id)
 
         val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
-        loggerAccount.info("user=$userId deposited into account=${account.accountNumber}...invalidating cache")
+        loggerAccount.info("user=$userId deposited into accountId=${account.id}...invalidating cache")
         accountCache.remove(userId)
 
         val transactionCache = serverMcCache.getMap<Long, List<TransactionHistoryResponse>>("transaction")
-        loggerShop.info("transaction history for account=${account.id} has been updated...invalidating cache")
+        loggerShop.info("transaction history for accountId=${account.id} has been updated...invalidating cache")
         transactionCache.remove(account.id)
 
         return ResponseEntity.ok().body(DepositResponse(
@@ -198,11 +199,11 @@ class TransactionsService(
         ))
 
         val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
-        loggerAccount.info("user=$userId withdrew from account=${account.accountNumber}...invalidating cache")
+        loggerAccount.info("user=$userId withdrew from accountId=${account.id}...invalidating cache")
         accountCache.remove(userId)
 
         val transactionCache = serverMcCache.getMap<Long, List<TransactionHistoryResponse>>("transaction")
-        loggerShop.info("transaction history for account=${account.id} has been updated...invalidating cache")
+        loggerShop.info("transaction history for accountId=${account.id} has been updated...invalidating cache")
         transactionCache.remove(account.id)
 
         return ResponseEntity.ok().body(WithdrawResponse(
@@ -356,7 +357,7 @@ class TransactionsService(
         userMembershipRepository.save(destinationUpdatedMembership)
 
         val shopCache = serverMcCache.getMap<Long, List<ListItemsResponse>>("shop")
-        loggerShop.info("user membership for account=${sourceAccount.id} has be updated...invalidating cache")
+        loggerShop.info("user membership for accountId=${sourceAccount.id} has be updated...invalidating cache")
         shopCache.remove(sourceAccount.id)
 
         val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
@@ -364,10 +365,10 @@ class TransactionsService(
         accountCache.remove(userId)
 
         val transactionCache = serverMcCache.getMap<Long, List<TransactionHistoryResponse>>("transaction")
-        loggerShop.info("transaction history for source account=${sourceAccount.id} has been updated...invalidating cache")
+        loggerShop.info("transaction history for source accountId=${sourceAccount.id} has been updated...invalidating cache")
         transactionCache.remove(sourceAccount.id)
 
-        loggerShop.info("transaction history for destination account=${destinationAccount.id} has been updated...invalidating cache")
+        loggerShop.info("transaction history for destination accountId=${destinationAccount.id} has been updated...invalidating cache")
         transactionCache.remove(destinationAccount.id)
 
 

@@ -20,8 +20,12 @@ data class CurrencyEntity(
     @Column(name = "country_code")
     val countryCode: String,
 
-    val symbol: String
+    @Column(name = "symbol")
+    val symbol: String,
+
+    @Column(name = "name")
+    val name: String
 
 ) {
-    constructor() : this(null, "", "")
+    constructor() : this(null, "", "", "")
 }
