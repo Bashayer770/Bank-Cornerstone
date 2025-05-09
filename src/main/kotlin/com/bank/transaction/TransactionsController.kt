@@ -1,18 +1,22 @@
 package com.bank.transaction
 
+import com.bank.account.AccountRepository
 import com.bank.user.UserRepository
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.Locale.IsoCountryCode
 
 
 @RestController
 class TransactionsController(
     private val transactionsService: TransactionsService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val accountRepository: AccountRepository
 ) {
     @PostMapping("/api/v1/accounts/deposit")
     fun depositAccount(@RequestBody request: DepositRequest): ResponseEntity<*> {
@@ -32,6 +36,22 @@ class TransactionsController(
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username) ?: throw IllegalArgumentException("user was not found...")
         return transactionsService.transferAccounts(request, user.id)
+    }
+
+    @GetMapping("/api/v1/accounts/transactions/{accountId}")
+    fun getTransactionHistory(@PathVariable accountId: Long): ResponseEntity<*> {
+        val username = SecurityContextHolder.getContext().authentication.name
+        val user = userRepository.findByUsername(username)
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("error" to "User not found"))
+
+        val account = accountRepository.findById(accountId).orElse(null)
+            ?: return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("error" to "Account not found"))
+
+        if (account.user.id != user.id) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("error" to "Account does not belong to user"))
+        }
+
+        return transactionsService.getTransactionHistory(accountId)
     }
 }
 
@@ -74,4 +94,12 @@ data class TransferResponse(
     val isSourceConverted: Boolean,
     val sourceAmountWithdrawn: BigDecimal,
     val transferFee: BigDecimal
+)
+
+data class TransactionHistoryResponse(
+    val accountNumber: String,
+    val currency: String,
+    val amount: BigDecimal,
+    val status: String,
+    val timeStamp: LocalDateTime
 )

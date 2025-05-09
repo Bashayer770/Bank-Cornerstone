@@ -1,12 +1,14 @@
 package com.bank.transaction
 
 import com.bank.account.AccountRepository
+import com.bank.account.CreateAccountResponse
 import com.bank.account.ListAccountResponse
 import com.bank.currency.CurrencyRepository
 import com.bank.exchange.ExchangeRateApi
 import com.bank.membership.MembershipRepository
 import com.bank.promocode.PromoCodeRepository
 import com.bank.serverMcCache
+import com.bank.shop.ListItemsResponse
 import com.bank.usermembership.UserMembershipRepository
 import com.hazelcast.logging.Logger
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,11 +19,12 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
 private val loggerAccount = Logger.getLogger("account")
+private val  loggerTransaction = Logger.getLogger("transaction")
+private val  loggerShop = Logger.getLogger("shop")
 const val TRANSACTION_TYPE_DEPOSIT = 103
 const val TRANSACTION_TYPE_WITHDRAW = 104
 const val TRANSACTION_TYPE_TRANSFER = 101
 const val TRANSACTION_TYPE_FEE = 102
-
 
 @Service
 class TransactionsService(
@@ -34,6 +37,33 @@ class TransactionsService(
 ) {
     @Autowired
     private lateinit var exchangeRateApi: ExchangeRateApi
+
+    fun getTransactionHistory(accountId: Long): ResponseEntity<*> {
+        val transactionCache = serverMcCache.getMap<Long, List<TransactionHistoryResponse>>("transaction")
+
+        transactionCache[accountId]?.let {
+            loggerTransaction.info("Returning list of transactions for accountId=$accountId")
+            return ResponseEntity.ok(it)
+        }
+
+        val transactionHistory = transactionRepository.findBySourceAccount_Id(accountId)
+
+        val account = accountRepository.findById(accountId).orElseThrow {
+            IllegalArgumentException("Account with ID $accountId not found")
+        }
+
+        val response = transactionHistory?.map { transactionHistory -> TransactionHistoryResponse(
+            accountNumber = account.accountNumber,
+            currency = account.currency.countryCode,
+            amount = transactionHistory.amount,
+            status = transactionHistory.status.toString(),
+            timeStamp = transactionHistory.timeStamp
+        ) }
+
+        loggerTransaction.info("No transaction(s) found, caching new data...")
+        transactionCache[accountId] = response
+        return ResponseEntity.ok(response)
+    }
 
     fun depositAccount(request: DepositRequest, userId: Long?): ResponseEntity<*> {
         val account = accountRepository.findByAccountNumber(request.accountNumber)
@@ -70,8 +100,8 @@ class TransactionsService(
         accountRepository.save(account)
 
         transactionRepository.save(TransactionEntity(
-            sourceAccount = null,
-            destinationAccount = account,
+            sourceAccount = account,
+            destinationAccount = null,
             currency = requestedCurrency,
             amount = request.amount,
             timeStamp = LocalDateTime.now(),
@@ -100,9 +130,17 @@ class TransactionsService(
 
         userMembershipRepository.save(updatedMembership)
 
+        val shopCache = serverMcCache.getMap<Long, List<ListItemsResponse>>("shop")
+        loggerShop.info("user membership for account=${account.id} has been updated...invalidating cache")
+        shopCache.remove(account.id)
+
         val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
         loggerAccount.info("user=$userId deposited into account=${account.accountNumber}...invalidating cache")
         accountCache.remove(userId)
+
+        val transactionCache = serverMcCache.getMap<Long, List<TransactionHistoryResponse>>("transaction")
+        loggerShop.info("transaction history for account=${account.id} has been updated...invalidating cache")
+        transactionCache.remove(account.id)
 
         return ResponseEntity.ok().body(DepositResponse(
             newBalance = account.balance,
@@ -162,6 +200,10 @@ class TransactionsService(
         val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
         loggerAccount.info("user=$userId withdrew from account=${account.accountNumber}...invalidating cache")
         accountCache.remove(userId)
+
+        val transactionCache = serverMcCache.getMap<Long, List<TransactionHistoryResponse>>("transaction")
+        loggerShop.info("transaction history for account=${account.id} has been updated...invalidating cache")
+        transactionCache.remove(account.id)
 
         return ResponseEntity.ok().body(WithdrawResponse(
             newBalance = account.balance,
@@ -313,9 +355,22 @@ class TransactionsService(
 
         userMembershipRepository.save(destinationUpdatedMembership)
 
+        val shopCache = serverMcCache.getMap<Long, List<ListItemsResponse>>("shop")
+        loggerShop.info("user membership for account=${sourceAccount.id} has be updated...invalidating cache")
+        shopCache.remove(sourceAccount.id)
+
         val accountCache = serverMcCache.getMap<Long, List<ListAccountResponse>>("account")
-        loggerAccount.info("transfer occurred...invalidating cache")
+        loggerAccount.info("transfer between accounts occurred...invalidating cache")
         accountCache.remove(userId)
+
+        val transactionCache = serverMcCache.getMap<Long, List<TransactionHistoryResponse>>("transaction")
+        loggerShop.info("transaction history for source account=${sourceAccount.id} has been updated...invalidating cache")
+        transactionCache.remove(sourceAccount.id)
+
+        loggerShop.info("transaction history for destination account=${destinationAccount.id} has been updated...invalidating cache")
+        transactionCache.remove(destinationAccount.id)
+
+
 
         return ResponseEntity.ok().body(TransferResponse(
             sourceNewBalance = sourceAccount.balance,

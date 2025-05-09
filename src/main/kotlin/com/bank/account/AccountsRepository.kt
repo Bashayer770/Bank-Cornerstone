@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.util.*
 
 @Repository
 interface AccountRepository : JpaRepository<AccountEntity, Long> {
@@ -14,6 +15,7 @@ interface AccountRepository : JpaRepository<AccountEntity, Long> {
     fun findByCurrencyId(currencyId: Long): List<AccountEntity>?
     fun existsByAccountNumber(accountNumber: String): Boolean
     fun findByAccountNumber(accountNumber: String): AccountEntity?
+    override fun findById(accountId: Long): Optional<AccountEntity>
 }
 
 @Entity

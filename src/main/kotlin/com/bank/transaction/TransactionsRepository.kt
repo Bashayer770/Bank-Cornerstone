@@ -16,6 +16,8 @@ interface TransactionRepository : JpaRepository<TransactionEntity, Long> {
 //    fun findByStatus(status: TransactionStatus): List<TransactionEntity>
 //    fun findByTimeStampBetween(start: LocalDateTime, end: LocalDateTime): List<TransactionEntity>
 //    fun findByPromoCodeId(promoCodeId: Long): List<TransactionEntity>
+fun findBySourceAccount_Id(accountId: Long): List<TransactionEntity>?
+
 }
 
 @Entity

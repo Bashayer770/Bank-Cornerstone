@@ -40,7 +40,11 @@ class SecurityConfig(
                     "/api/v1/accounts/withdraw",
                     "/api/v1/accounts/transfer",
                     "/api/v1/memberships/tier/{name}",
-                    "/api/v1/memberships").authenticated()
+                    "/api/v1/memberships",
+                    "/api/v1/shop/items/{accountId}",
+                    "/api/v1/shop/buy",
+                    "/api/v1/accounts/transactions/{accountId}",
+                    "/api/v1/shop/history/{accountId}").authenticated()
                     .anyRequest().authenticated()
             }
             .sessionManagement {

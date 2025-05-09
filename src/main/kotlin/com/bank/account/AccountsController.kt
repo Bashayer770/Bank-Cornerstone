@@ -1,13 +1,7 @@
 package com.bank.account
 
-import com.bank.currency.CurrencyEntity
-import com.bank.user.UserEntity
+
 import com.bank.user.UserRepository
-import jakarta.persistence.Column
-import jakarta.persistence.FetchType
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
@@ -62,7 +56,8 @@ data class ListAccountResponse(
     val createdAt: LocalDateTime,
     val countryCode: String,
     val symbol: String,
-    val accountTier: String
+    val accountTier: String,
+    val points: Int
 )
 
 data class CreateAccountResponse(

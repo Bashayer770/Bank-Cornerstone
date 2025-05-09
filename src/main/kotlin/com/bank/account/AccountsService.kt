@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.security.SecureRandom
 import java.time.LocalDateTime
-
 private val  loggerAccount = Logger.getLogger("account")
 
 
@@ -42,8 +41,9 @@ class AccountsService(
         }
 
         val response = accounts?.map { account ->
-            val membership = userMembershipRepository.findByAccountId(account.id!!)
+            val membership = account.id?.let { userMembershipRepository.findByAccountId(it) }
             val tierName = membership?.membershipTier?.tierName ?: "UNKNOWN"
+            val points = membership?.tierPoints ?: "could not find points..." as Int
 
             ListAccountResponse(
                 balance = account.balance,
@@ -52,7 +52,8 @@ class AccountsService(
                 createdAt = account.createdAt,
                 countryCode = account.currency.countryCode,
                 symbol = account.currency.symbol,
-                accountTier = tierName
+                accountTier = tierName,
+                points = points
             )
         }
 
@@ -106,7 +107,7 @@ class AccountsService(
         ))
 
         val accountCache = serverMcCache.getMap<Long, List<CreateAccountResponse>>("account")
-        loggerAccount.info("account=${account.accountNumber} for userId=$userId has been created...invalidating cache")
+        loggerAccount.info("account=${account.id} for userId=$userId has been created...invalidating cache")
         accountCache.remove(userId)
 
         return ResponseEntity.ok().body(CreateAccountResponse(
@@ -140,7 +141,7 @@ class AccountsService(
 
 
         val accountCache = serverMcCache.getMap<Long, List<CreateAccountResponse>>("account")
-        loggerAccount.info("account=$accountNumber for userId=$userId has been closed...invalidating cache")
+        loggerAccount.info("account=${account.id} for userId=$userId has been closed...invalidating cache")
         accountCache.remove(userId)
 
         return ResponseEntity.ok(mapOf("message" to "account closed successfully"))
