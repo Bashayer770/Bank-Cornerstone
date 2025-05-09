@@ -51,8 +51,7 @@ class KYCsService(
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("error" to "user was not found"))
 
-        val existing =
-            kycRepository.findByUserId(userId) // retrieving whatever data available in the KYC database for this user
+        val existing = kycRepository.findByUserId(userId) // retrieving whatever data available in the KYC database for this user
 
         val age = java.time.Period.between(request.dateOfBirth, LocalDate.now()).years
         if (age < 18) {
@@ -60,10 +59,31 @@ class KYCsService(
                 .body(mapOf("error" to "you must be 18 or older to register"))
         }
 
+        val nameRegex = Regex("^[\\p{L} ]{2,50}$") // Unicode letters only, allows Arabic & English names
+        val digitsOnlyRegex = Regex("^\\d+$")
+
+        if (!nameRegex.matches(request.firstName)) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "first name must only contain letters"))
+        }
+
+        if (!nameRegex.matches(request.lastName)) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "last name must only contain letters"))
+        }
+
+        if (!digitsOnlyRegex.matches(request.civilId) || request.civilId.length != 12) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "civil ID must be exactly 12 digits"))
+        }
+
+        if (!digitsOnlyRegex.matches(request.phoneNumber) || request.phoneNumber.length != 8) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "phone number must be exactly 8 digits"))
+        }
+
+        if (request.dateOfBirth.isAfter(LocalDate.now())) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "date of birth must be in the past"))
+        }
+
         if (request.salary < BigDecimal(100.000) || request.salary > BigDecimal(1000000.000)) {
-            return ResponseEntity
-                .badRequest()
-                .body(mapOf("error" to "salary must be between 100 and 1,000,000 KD"))
+            return ResponseEntity.badRequest().body(mapOf("error" to "salary must be between 100 and 1,000,000 KD"))
         }
 
         val kyc = if (existing != null) { // updating data
