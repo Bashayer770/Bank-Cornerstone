@@ -31,7 +31,12 @@ class SecurityConfig(
             .authorizeHttpRequests {
                 it.requestMatchers(
                     "/api/v1/authentication/login",
-                    "/api/v1/authentication/register").permitAll()
+                    "/api/v1/authentication/register",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/webjars/**"
+                ).permitAll()
                 it.requestMatchers(
                     "/api/v1/users/kyc",
                     "/api/v1/users/accounts",
