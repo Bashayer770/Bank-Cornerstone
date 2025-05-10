@@ -144,7 +144,7 @@ class AccountsService(
         loggerAccount.info("account=${account.id} for userId=$userId has been closed...invalidating cache")
         accountCache.remove(userId)
 
-        return ResponseEntity.ok(mapOf("message" to "account closed successfully"))
+        return ResponseEntity.ok().build()
     }
 
 
