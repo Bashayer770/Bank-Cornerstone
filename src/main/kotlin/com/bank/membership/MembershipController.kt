@@ -3,6 +3,7 @@ package com.bank.membership
 import com.bank.user.UserRepository
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
+import java.math.BigDecimal
 
 
 @RestController
@@ -11,7 +12,7 @@ class MembershipController(
     private val userRepository: UserRepository
 ) {
     @GetMapping("/api/v1/memberships")
-    fun getAll(): List<MembershipTierEntity> {
+    fun getAll(): List<ListMembershipResponse> {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = userRepository.findByUsername(username) ?: throw IllegalArgumentException("user has no id...")
         return membershipService.getAll(user.id)
@@ -22,3 +23,9 @@ class MembershipController(
         return membershipService.getByTierName(name)
     }
 }
+
+data class ListMembershipResponse(
+    val tierName: String,
+    val memberLimit: Int,
+    val discountAmount: BigDecimal
+)

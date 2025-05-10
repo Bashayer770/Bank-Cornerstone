@@ -11,16 +11,24 @@ private val loggerTiers = Logger.getLogger("tiers")
 class MembershipService(
     private val membershipRepository: MembershipRepository
 ) {
-    fun getAll(userId: Long?): List<MembershipTierEntity> {
-        val tiersCache = serverMcCache.getMap<Long, List<MembershipTierEntity>>("tiers")
+    fun getAll(userId: Long?): List<ListMembershipResponse> {
+        val tiersCache = serverMcCache.getMap<Long, List<ListMembershipResponse>>("tiers")
 
         tiersCache[userId]?.let {
             loggerTiers.info("returning list of tiers from cache")
             return it
         }
+
+        val memberships = membershipRepository.findAll()
+        val response = memberships.map { memberships -> ListMembershipResponse(
+            tierName = memberships.tierName,
+            memberLimit = memberships.memberLimit,
+            discountAmount = memberships.discountAmount
+        ) }
+
         loggerTiers.info("no tiers list found...caching new data")
-        tiersCache[userId] = membershipRepository.findAll()
-        return membershipRepository.findAll()
+        tiersCache[userId] = response
+        return response
     }
 
     fun getByTierName(tierName: String): MembershipTierEntity? {
