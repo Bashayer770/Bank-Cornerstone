@@ -31,7 +31,8 @@ class SecurityConfig(
             .authorizeHttpRequests {
                 it.requestMatchers(
                     "/authentication/api/v1/authentication/login",
-                    "/api/v1/authentication/register").permitAll()
+                    "/api/v1/authentication/register",
+                    "/api-docs").permitAll()
                 it.requestMatchers(
                     "/api/v1/users/kyc",
                     "/api/v1/users/accounts",

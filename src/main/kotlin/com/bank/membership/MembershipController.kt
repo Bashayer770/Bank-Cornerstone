@@ -1,11 +1,12 @@
 package com.bank.membership
 
 import com.bank.user.UserRepository
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 
-
+@Tag(name="MembershipAPI")
 @RestController
 class MembershipController(
     private val membershipService: MembershipService,

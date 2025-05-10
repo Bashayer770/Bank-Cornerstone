@@ -1,10 +1,12 @@
 package com.bank.user
 
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
+@Tag(name="UserAPI")
 @RestController
 class UsersController(
     private val usersService: UsersService

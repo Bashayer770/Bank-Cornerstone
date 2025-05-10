@@ -2,6 +2,7 @@ package com.bank.transaction
 
 import com.bank.account.AccountRepository
 import com.bank.user.UserRepository
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
@@ -11,7 +12,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale.IsoCountryCode
 
-
+@Tag(name="TransactionAPI")
 @RestController
 class TransactionsController(
     private val transactionsService: TransactionsService,

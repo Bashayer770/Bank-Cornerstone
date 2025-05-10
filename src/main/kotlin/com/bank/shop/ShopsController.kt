@@ -2,6 +2,7 @@ package com.bank.shop
 
 import com.bank.account.AccountRepository
 import com.bank.user.UserRepository
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.logging.log4j.util.StringMap
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -9,6 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
+
+@Tag(name="ShopAPI")
 
 @RestController
 class ShopController(

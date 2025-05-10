@@ -2,12 +2,14 @@ package com.bank.account
 
 
 import com.bank.user.UserRepository
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
+@Tag(name="AccountAPI")
 @RestController
 class AccountsController(
     private val accountsService: AccountsService,
