@@ -95,7 +95,11 @@ class ShopsService(
         loggerShopTransaction.info("shopping history for account=${account.id} has been updated...invalidating cache")
         shopTransactionCache.remove(account.id)
 
-        return ResponseEntity.ok(mapOf("message" to "Purchased: ${item.itemName}"))
+        return ResponseEntity.ok().body(PurchaseResponse(
+            updatedPoints = updatedPoints
+        )
+
+        )
     }
 
     fun getShopTransaction(accountId: Long): ResponseEntity<*> {

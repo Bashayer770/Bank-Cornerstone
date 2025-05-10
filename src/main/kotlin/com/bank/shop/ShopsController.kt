@@ -61,6 +61,10 @@ data class PurchaseRequest(
     val itemName: String
 )
 
+data class PurchaseResponse(
+    val updatedPoints: Int,
+)
+
 data class ListItemsResponse(
     val itemName: String,
     val tierName: String,
