@@ -20,6 +20,13 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+        // Skip JWT processing for login and register endpoints
+        if (request.servletPath == "/api/v1/authentication/login" || 
+            request.servletPath == "/api/v1/authentication/register") {
+            filterChain.doFilter(request, response)
+            return
+        }
+
         val authHeader = request.getHeader("Authorization")
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response)

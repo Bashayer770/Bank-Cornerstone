@@ -1,6 +1,5 @@
 package com.bank.authentication
 
-
 import com.bank.authentication.jwt.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -16,10 +15,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-
+import org.springframework.context.annotation.Profile
 
 @Configuration
 @EnableWebSecurity
+@Profile("!test")
 class SecurityConfig(
     private val jwtAuthFilter: JwtAuthenticationFilter,
     private val userDetailsService: UserDetailsService
@@ -30,7 +30,7 @@ class SecurityConfig(
         http.csrf { it.disable() }
             .authorizeHttpRequests {
                 it.requestMatchers(
-                    "/authentication/api/v1/authentication/login",
+                    "/api/v1/authentication/login",
                     "/api/v1/authentication/register").permitAll()
                 it.requestMatchers(
                     "/api/v1/users/kyc",
