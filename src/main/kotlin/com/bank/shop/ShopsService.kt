@@ -56,6 +56,9 @@ class ShopsService(
             IllegalArgumentException("account not found")
         }
 
+        val userMembership = userMembershipRepository.findByAccountId(request.accountId)
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "account was not found"))
+
         val membership = userMembershipRepository.findByAccountId(request.accountId)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "user membership not found"))
 
@@ -82,7 +85,9 @@ class ShopsService(
                 tierName = membership.membershipTier.tierName,
                 item = item,
                 pointsSpent = item.pointCost,
-                timeOfTransaction = LocalDateTime.now()
+                timeOfTransaction = LocalDateTime.now(),
+                accountTier = userMembership.membershipTier
+
             )
         )
 
