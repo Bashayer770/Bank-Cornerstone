@@ -17,9 +17,19 @@ import com.bank.currency.CurrencyRepository
 import com.bank.currency.CurrencyEntity
 import io.cucumber.datatable.DataTable
 import java.util.stream.Collectors
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+import com.bank.config.TestSecurityConfig
+import org.springframework.context.annotation.Import
+import com.bank.user.UserRepository
+import com.bank.user.UserEntity
+import org.springframework.security.crypto.password.PasswordEncoder
+import java.time.LocalDateTime
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestSecurityConfig::class)
 class CurrencySteps {
 
     @Autowired
@@ -31,17 +41,30 @@ class CurrencySteps {
     @Autowired
     private lateinit var currencyRepository: CurrencyRepository
 
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+
     private var response: String? = null
 
     @Given("I am an authenticated user")
     fun iAmAnAuthenticatedUser() {
-        // Authentication is handled by TestSecurityConfig
+        userRepository.save(
+            UserEntity(
+                username = "testuser",
+                password = passwordEncoder.encode("password"),
+                createdAt = LocalDateTime.now()
+            )
+        )
     }
 
     @When("I send a POST request to {string} with the following data:")
     fun iSendAPostRequest(endpoint: String, requestBody: String) {
         response = mockMvc.perform(
             MockMvcRequestBuilders.post(endpoint)
+                .with(SecurityMockMvcRequestPostProcessors.httpBasic("testuser", "password"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
         )
@@ -71,8 +94,9 @@ class CurrencySteps {
         val currencies = dataTable.asMaps().stream()
             .map { row ->
                 CurrencyEntity(
-                    countryCode = row["countryCode"]!!,
-                    symbol = row["symbol"]!!
+                    countryCode = row["countryCode"] ?: "",
+                    symbol = row["symbol"] ?: "",
+                    name = row["name"] ?: ""
                 )
             }
             .collect(Collectors.toList())
@@ -108,6 +132,12 @@ class CurrencySteps {
                     "GB" -> "£"
                     "EU" -> "€"
                     else -> "?"
+                },
+                name = when (countryCode) {
+                    "US" -> "US Dollar"
+                    "GB" -> "British Pound"
+                    "EU" -> "Euro"
+                    else -> "Unknown"
                 }
             )
         )

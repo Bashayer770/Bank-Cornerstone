@@ -26,9 +26,13 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 import io.cucumber.datatable.DataTable
 import java.util.stream.Collectors
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class TransactionSteps {
 
     @Autowired
@@ -49,50 +53,61 @@ class TransactionSteps {
     @Autowired
     private lateinit var userRepository: UserRepository
 
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+
     private var response: String? = null
     private var sourceAccount: AccountEntity? = null
     private var destinationAccount: AccountEntity? = null
+    private var testUser: UserEntity? = null
+    private var testCurrency: CurrencyEntity? = null
 
     @Given("I am an authenticated user")
     fun iAmAnAuthenticatedUser() {
-        // Authentication is handled by TestSecurityConfig
+        testUser = userRepository.save(
+            UserEntity(
+                username = "testuser",
+                password = passwordEncoder.encode("password"),
+                createdAt = LocalDateTime.now()
+            )
+        )
+        
+        // Create test currency if not exists
+        testCurrency = currencyRepository.findByCountryCode("USD") ?: currencyRepository.save(
+            CurrencyEntity(
+                countryCode = "USD",
+                symbol = "$",
+                name = "US Dollar"
+            )
+        )
     }
 
     @Given("I have a source account with balance {double} {string}")
-    fun iHaveASourceAccountWithBalance(balance: Double, currencyCode: String) {
-        val user = userRepository.save(UserEntity(username = "testuser", password = "password", createdAt = LocalDateTime.now()))
-        val currency = currencyRepository.save(CurrencyEntity(countryCode = currencyCode, symbol = when(currencyCode) {
-            "USD" -> "$"
-            "EUR" -> "€"
-            else -> "?"
-        }))
-        
+    fun iHaveASourceAccountWithBalance(balance: Double, currency: String) {
         sourceAccount = accountRepository.save(
             AccountEntity(
-                user = user,
+                user = testUser!!,
                 balance = BigDecimal(balance),
-                currency = currency,
+                currency = testCurrency!!,
+                createdAt = LocalDateTime.now(),
                 isActive = true,
-                accountNumber = "USD123456"
+                accountNumber = "SOURCE123456",
+                accountType = "SAVINGS"
             )
         )
     }
 
     @Given("I have a destination account with balance {double} {string}")
-    fun iHaveADestinationAccountWithBalance(balance: Double, currencyCode: String) {
-        val currency = currencyRepository.save(CurrencyEntity(countryCode = currencyCode, symbol = when(currencyCode) {
-            "USD" -> "$"
-            "EUR" -> "€"
-            else -> "?"
-        }))
-        
+    fun iHaveADestinationAccountWithBalance(balance: Double, currency: String) {
         destinationAccount = accountRepository.save(
             AccountEntity(
-                user = sourceAccount!!.user,
+                user = testUser!!,
                 balance = BigDecimal(balance),
-                currency = currency,
+                currency = testCurrency!!,
+                createdAt = LocalDateTime.now(),
                 isActive = true,
-                accountNumber = "EUR789012"
+                accountNumber = "DEST123456",
+                accountType = "SAVINGS"
             )
         )
     }
@@ -101,6 +116,7 @@ class TransactionSteps {
     fun iSendAPostRequest(endpoint: String, requestBody: String) {
         response = mockMvc.perform(
             MockMvcRequestBuilders.post(endpoint)
+                .with(SecurityMockMvcRequestPostProcessors.httpBasic("testuser", "password"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
         )
@@ -117,8 +133,8 @@ class TransactionSteps {
     @And("the transaction should be completed successfully")
     fun theTransactionShouldBeCompletedSuccessfully() {
         val responseMap = objectMapper.readValue(response, Map::class.java)
-        Assertions.assertTrue(responseMap.containsKey("id"))
-        Assertions.assertEquals("COMPLETED", responseMap["status"])
+        Assertions.assertTrue(responseMap.containsKey("transferStatus"))
+        Assertions.assertEquals("COMPLETED", responseMap["transferStatus"])
     }
 
     @And("the source account balance should be {double} {string}")
@@ -137,14 +153,14 @@ class TransactionSteps {
     fun theResponseShouldContainInsufficientFundsError() {
         val responseMap = objectMapper.readValue(response, Map::class.java)
         Assertions.assertTrue(responseMap.containsKey("error"))
-        Assertions.assertTrue((responseMap["error"] as String).contains("insufficient funds"))
+        Assertions.assertTrue((responseMap["error"] as String).contains("insufficient balance"))
     }
 
     @And("the response should contain invalid currency error")
     fun theResponseShouldContainInvalidCurrencyError() {
         val responseMap = objectMapper.readValue(response, Map::class.java)
         Assertions.assertTrue(responseMap.containsKey("error"))
-        Assertions.assertTrue((responseMap["error"] as String).contains("invalid currency"))
+        Assertions.assertTrue((responseMap["error"] as String).contains("Currency not supported"))
     }
 
     @Given("the following transactions exist:")
@@ -157,7 +173,8 @@ class TransactionSteps {
                     amount = BigDecimal(row["amount"]!!),
                     currency = currencyRepository.findByCountryCode(row["currency"]!!)!!,
                     status = TransactionStatus.valueOf(row["status"]!!),
-                    timeStamp = LocalDateTime.now()
+                    timeStamp = LocalDateTime.now(),
+                    promoCode = null
                 )
             }
             .collect(Collectors.toList())
@@ -169,6 +186,7 @@ class TransactionSteps {
     fun iSendAGetRequest(endpoint: String) {
         response = mockMvc.perform(
             MockMvcRequestBuilders.get(endpoint)
+                .with(SecurityMockMvcRequestPostProcessors.httpBasic("testuser", "password"))
                 .contentType(MediaType.APPLICATION_JSON)
         )
             .andExpect(MockMvcResultMatchers.status().isOk)

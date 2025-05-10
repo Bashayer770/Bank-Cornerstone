@@ -19,9 +19,17 @@ import com.bank.kyc.KYCRepository
 import com.bank.kyc.KYCEntity
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.math.BigDecimal
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+import com.bank.config.TestSecurityConfig
+import org.springframework.context.annotation.Import
+import org.springframework.security.crypto.password.PasswordEncoder
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestSecurityConfig::class)
 class KYCSteps {
 
     @Autowired
@@ -36,12 +44,21 @@ class KYCSteps {
     @Autowired
     private lateinit var kycRepository: KYCRepository
 
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+
     private var response: String? = null
     private var testUser: UserEntity? = null
 
     @Given("I am an authenticated user")
     fun iAmAnAuthenticatedUser() {
-        // Authentication is handled by TestSecurityConfig
+        testUser = userRepository.save(
+            UserEntity(
+                username = "testuser",
+                password = passwordEncoder.encode("password"),
+                createdAt = LocalDateTime.now()
+            )
+        )
     }
 
     @Given("I have a registered user with username {string}")
@@ -49,7 +66,7 @@ class KYCSteps {
         testUser = userRepository.save(
             UserEntity(
                 username = username,
-                password = "password",
+                password = passwordEncoder.encode("password"),
                 createdAt = LocalDateTime.now()
             )
         )
@@ -59,6 +76,7 @@ class KYCSteps {
     fun iSendAPostRequest(endpoint: String, requestBody: String) {
         response = mockMvc.perform(
             MockMvcRequestBuilders.post(endpoint)
+                .with(SecurityMockMvcRequestPostProcessors.httpBasic("testuser", "password"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
         )
@@ -76,6 +94,8 @@ class KYCSteps {
     fun theKYCInformationShouldBeSavedSuccessfully() {
         val responseMap = objectMapper.readValue(response, Map::class.java)
         Assertions.assertTrue(responseMap.containsKey("id"))
+        Assertions.assertTrue(responseMap.containsKey("userId"))
+        Assertions.assertTrue(responseMap.containsKey("status"))
         
         // Verify KYC exists in database
         val kyc = kycRepository.findByUserId(testUser!!.id!!)
@@ -83,7 +103,7 @@ class KYCSteps {
         Assertions.assertEquals("John", kyc!!.firstName)
         Assertions.assertEquals("Doe", kyc.lastName)
         Assertions.assertEquals("US", kyc.country)
-        Assertions.assertEquals(LocalDate.parse("1990-01-01"), kyc.dob)
+        Assertions.assertEquals(LocalDate.parse("1990-01-01"), kyc.dateOfBirth)
     }
 
     @And("the response should contain date of birth validation error")
@@ -109,10 +129,11 @@ class KYCSteps {
                 firstName = "John",
                 lastName = "Doe",
                 country = "US",
-                dob = LocalDate.parse("1990-01-01"),
+                dateOfBirth = LocalDate.parse("1990-01-01"),
                 civilId = "123456789",
                 phoneNumber = "+1234567890",
-                homeAddress = "123 Main St, City, Country"
+                homeAddress = "123 Main St, City, Country",
+                salary = BigDecimal("50000.00")
             )
         )
     }

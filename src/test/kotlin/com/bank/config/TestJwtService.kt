@@ -1,20 +1,21 @@
-package com.bank.authentication.jwt
+package com.bank.config
 
-import io.jsonwebtoken.*
+import com.bank.authentication.jwt.JwtService
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
-import org.springframework.context.annotation.Profile
+import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Component
 import java.util.*
-import javax.crypto.SecretKey
 
 @Component
-@Profile("!test")
-class JwtService {
+@Primary
+class TestJwtService : JwtService() {
+    // Use a fixed secret key for testing
+    private val secretKey = Keys.hmacShaKeyFor("test_secret_key_that_is_long_enough_for_hs256_algorithm".toByteArray())
+    private val expirationMs: Long = 1000 * 60 * 60 // 1 hour
 
-    private val secretKey: SecretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256)
-    private val expirationMs: Long = 1000 * 60 * 60
-
-    fun generateToken(username: String): String {
+    override fun generateToken(username: String): String {
         val now = Date()
         val expiry = Date(now.time + expirationMs)
 
@@ -26,7 +27,7 @@ class JwtService {
             .compact()
     }
 
-    fun extractUsername(token: String): String =
+    override fun extractUsername(token: String): String =
         Jwts.parserBuilder()
             .setSigningKey(secretKey)
             .build()
@@ -34,11 +35,11 @@ class JwtService {
             .body
             .subject
 
-    fun isTokenValid(token: String, username: String): Boolean {
+    override fun isTokenValid(token: String, username: String): Boolean {
         return try {
             extractUsername(token) == username
         } catch (e: Exception) {
             false
         }
     }
-}
+} 

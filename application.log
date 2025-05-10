@@ -1,0 +1,136 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.bank:Multi-currency-Banking >-------------------
+[INFO] Building Multi-currency-Banking 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.4.4:run (default-cli) > test-compile @ Multi-currency-Banking >>>
+[INFO] 
+[INFO] --- jacoco:0.8.11:prepare-agent (default) @ Multi-currency-Banking ---
+[INFO] argLine set to "-javaagent:/Users/bishow_/.m2/repository/org/jacoco/org.jacoco.agent/0.8.11/org.jacoco.agent-0.8.11-runtime.jar=destfile=/Users/bishow_/Downloads/Multi-currency-Banking /target/jacoco.exec"
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ Multi-currency-Banking ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ Multi-currency-Banking ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- kotlin:1.9.25:compile (compile) @ Multi-currency-Banking ---
+[INFO] Applied plugin: 'spring'
+[INFO] Applied plugin: 'jpa'
+[INFO] Applied plugin: 'all-open'
+[WARNING] /Users/bishow_/Downloads/Multi-currency-Banking /src/main/kotlin/com/bank/LoggingFilter.kt: (47, 9) Field from base class org.springframework.web.filter.GenericFilterBean may shadow the open property from derived class com.bank.LoggingFilter. This behavior will be changed soon in favor of the property. Please use explicit cast to org.springframework.web.filter.GenericFilterBean if you wish to preserve current behavior. See https://youtrack.jetbrains.com/issue/KT-55017 for details
+[WARNING] /Users/bishow_/Downloads/Multi-currency-Banking /src/main/kotlin/com/bank/LoggingFilter.kt: (62, 9) Field from base class org.springframework.web.filter.GenericFilterBean may shadow the open property from derived class com.bank.LoggingFilter. This behavior will be changed soon in favor of the property. Please use explicit cast to org.springframework.web.filter.GenericFilterBean if you wish to preserve current behavior. See https://youtrack.jetbrains.com/issue/KT-55017 for details
+[WARNING] /Users/bishow_/Downloads/Multi-currency-Banking /src/main/kotlin/com/bank/account/AccountsService.kt: (47, 79) This cast can never succeed
+[WARNING] /Users/bishow_/Downloads/Multi-currency-Banking /src/main/kotlin/com/bank/shop/ShopsService.kt: (43, 35) Name shadowed: items
+[WARNING] /Users/bishow_/Downloads/Multi-currency-Banking /src/main/kotlin/com/bank/transaction/TransactionsService.kt: (56, 50) Name shadowed: transactionHistory
+[WARNING] /Users/bishow_/Downloads/Multi-currency-Banking /src/main/kotlin/com/bank/transaction/TransactionsService.kt: (267, 22) Variable 'wasDestinationConverted' is never used
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ Multi-currency-Banking ---
+[INFO] Copying 7 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ Multi-currency-Banking ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] 
+[INFO] --- kotlin:1.9.25:test-compile (test-compile) @ Multi-currency-Banking ---
+[INFO] Applied plugin: 'spring'
+[INFO] Applied plugin: 'jpa'
+[INFO] Applied plugin: 'all-open'
+[INFO] 
+[INFO] <<< spring-boot:3.4.4:run (default-cli) < test-compile @ Multi-currency-Banking <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.4.4:run (default-cli) @ Multi-currency-Banking ---
+[INFO] Attaching agents: []
+May 10, 2025 3:42:13 PM com.hazelcast.instance.impl.HazelcastInstanceFactory
+WARNING: Hazelcast is starting in a Java modular environment (Java 9 and newer) but without proper access to required Java packages. Use additional Java arguments to provide Hazelcast access to Java internal API. The internal API access is used to get the best performance results. Arguments to be used:
+ --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+May 10, 2025 3:42:13 PM com.hazelcast.system.logo
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] 
+    o    o     o     o---o   o--o o      o---o     o     o----o o--o--o
+    |    |    / \       /         |     /         / \    |         |
+    o----o       o     o   o----o |    o             o   o----o    |
+    |    |  *     \   /           |     \       *     \       |    |
+    o    o *       o o---o   o--o o----o o---o *       o o----o    o
+
+May 10, 2025 3:42:13 PM com.hazelcast.system
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+May 10, 2025 3:42:13 PM com.hazelcast.system
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Hazelcast Platform 5.5.0 (20240725) starting at [192.168.8.139]:5702
+May 10, 2025 3:42:13 PM com.hazelcast.system
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Cluster name: dev
+May 10, 2025 3:42:13 PM com.hazelcast.system
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Integrity Checker is disabled. Fail-fast on corrupted executables will not be performed. For more information, see the documentation for Integrity Checker.
+May 10, 2025 3:42:13 PM com.hazelcast.system
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] The Jet engine is disabled.
+To enable the Jet engine on the members, do one of the following:
+  - Change member config using Java API: config.getJetConfig().setEnabled(true)
+  - Change XML/YAML configuration property: Set hazelcast.jet.enabled to true
+  - Add system property: -Dhz.jet.enabled=true (for Hazelcast embedded, works only when loading config via Config.load)
+  - Add environment variable: HZ_JET_ENABLED=true (recommended when running container image. For Hazelcast embedded, works only when loading config via Config.load)
+May 10, 2025 3:42:13 PM com.hazelcast.system.security
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Enable DEBUG/FINE log level for log category com.hazelcast.system.security  or use -Dhazelcast.security.recommendations system property to see 🔒 security recommendations and the status of current config.
+May 10, 2025 3:42:13 PM com.hazelcast.instance.impl.Node
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Using Multicast discovery
+May 10, 2025 3:42:13 PM com.hazelcast.internal.diagnostics.Diagnostics
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Diagnostics disabled. To enable add -Dhazelcast.diagnostics.enabled=true to the JVM arguments.
+May 10, 2025 3:42:13 PM com.hazelcast.core.LifecycleService
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] [192.168.8.139]:5702 is STARTING
+May 10, 2025 3:42:14 PM com.hazelcast.internal.cluster.impl.MulticastJoiner
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Trying to join to discovered node: [192.168.8.139]:5701
+May 10, 2025 3:42:14 PM com.hazelcast.internal.server.tcp.TcpServerConnection
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] Initialized new cluster connection between /192.168.8.139:54715 and /192.168.8.139:5701
+May 10, 2025 3:42:14 PM com.hazelcast.internal.cluster.ClusterService
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] 
+
+Members {size:2, ver:10} [
+	Member [192.168.8.139]:5701 - 088c3ff6-284e-46be-919e-11c92cbbd5c6
+	Member [192.168.8.139]:5702 - b5713409-db8e-41bd-acfb-580dc5517f70 this
+]
+
+May 10, 2025 3:42:14 PM com.hazelcast.core.LifecycleService
+INFO: [192.168.8.139]:5702 [dev] [5.5.0] [192.168.8.139]:5702 is STARTED
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.4)
+
+2025-05-10T15:42:14.335+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] c.b.MultiCurrencyBankingApplicationKt    : Starting MultiCurrencyBankingApplicationKt using Java 21.0.2 with PID 82418 (/Users/bishow_/Downloads/Multi-currency-Banking /target/classes started by bishow_ in /Users/bishow_/Downloads/Multi-currency-Banking )
+2025-05-10T15:42:14.336+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] c.b.MultiCurrencyBankingApplicationKt    : No active profile set, falling back to 1 default profile: "default"
+2025-05-10T15:42:15.017+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-05-10T15:42:15.102+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 78 ms. Found 11 JPA repository interfaces.
+2025-05-10T15:42:15.422+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 9001 (http)
+2025-05-10T15:42:15.427+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-05-10T15:42:15.427+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-05-10T15:42:15.448+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-05-10T15:42:15.448+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1094 ms
+2025-05-10T15:42:15.581+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-05-10T15:42:15.654+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@3fe21d0e
+2025-05-10T15:42:15.655+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-05-10T15:42:15.676+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-05-10T15:42:15.701+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.11.Final
+2025-05-10T15:42:15.714+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-05-10T15:42:15.818+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-05-10T15:42:15.859+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 17.4
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-05-10T15:42:16.298+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-05-10T15:42:16.299+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-05-10T15:42:16.652+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2025-05-10T15:42:16.652+03:00  WARN 82418 --- [Multi-currency-Banking] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2025-05-10T15:42:16.898+03:00  WARN 82418 --- [Multi-currency-Banking] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-05-10T15:42:17.107+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2025-05-10T15:42:17.387+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 9001 (http) with context path '/'
+2025-05-10T15:42:17.396+03:00  INFO 82418 --- [Multi-currency-Banking] [           main] c.b.MultiCurrencyBankingApplicationKt    : Started MultiCurrencyBankingApplicationKt in 3.198 seconds (process running for 4.098)

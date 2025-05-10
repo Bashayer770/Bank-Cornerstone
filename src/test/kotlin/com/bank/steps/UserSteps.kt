@@ -17,9 +17,15 @@ import com.bank.user.UserRepository
 import com.bank.user.UserEntity
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.LocalDateTime
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+import com.bank.config.TestSecurityConfig
+import org.springframework.context.annotation.Import
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestSecurityConfig::class)
 class UserSteps {
 
     @Autowired
@@ -38,11 +44,16 @@ class UserSteps {
 
     @When("I send a POST request to {string} with the following data:")
     fun iSendAPostRequest(endpoint: String, requestBody: String) {
-        response = mockMvc.perform(
-            MockMvcRequestBuilders.post(endpoint)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody)
-        )
+        val request = MockMvcRequestBuilders.post(endpoint)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody)
+
+        // Add authentication for protected endpoints
+        if (!endpoint.contains("/authentication/")) {
+            request.with(SecurityMockMvcRequestPostProcessors.httpBasic("testuser", "password"))
+        }
+
+        response = mockMvc.perform(request)
             .andReturn()
             .response
             .contentAsString

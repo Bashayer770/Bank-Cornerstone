@@ -6,11 +6,12 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
+@RequestMapping("/api/v1/authentication")
 class UsersController(
     private val usersService: UsersService
 ) {
-    @PostMapping("/api/v1/authentication/register")
-    fun registerUser(@Valid @RequestBody request: CreateUserDTO): ResponseEntity<Any>{
+    @PostMapping("/register")
+    fun registerUser(@Valid @RequestBody request: CreateUserDTO): ResponseEntity<Any> {
         return usersService.registerUser(request)
     }
 }
